@@ -1,0 +1,55 @@
+client 2023-08-18 19:11:10,372 [INFO] Creating output directory '/data/krai/work_collection/generated_by_power_measurement_on_run_427467a1cb1f481589264e09cfac9ac9/power_logs'
+client 2023-08-18 19:11:10,373 [INFO] Sending command to the server: 'mlcommons/power client v3'
+client 2023-08-18 19:11:10,374 [INFO] Got response: 'mlcommons/power server v3'
+client 2023-08-18 19:11:10,374 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-08-18 19:11:10,399 [INFO] NTP:offset = -0.001 s, delay = 0.015 s 
+client 2023-08-18 19:11:10,399 [INFO] Sending command to the server: 'time'
+client 2023-08-18 19:11:10,400 [INFO] Got response: '1692382270.3998165'
+client 2023-08-18 19:11:10,400 [INFO] The time difference between the client and the server is within range 0.036 ms..0.979 ms
+client 2023-08-18 19:11:10,400 [INFO] Sending command to the server: 'new,,6979ea17-a81f-4fb3-a067-883d26f981a3'
+client 2023-08-18 19:11:10,402 [INFO] Got response: 'OK 2023-08-18_19-11-10,2621e2d3-1979-4978-91f9-3cbd70a8ab6c'
+client 2023-08-18 19:11:10,402 [INFO] Session id is '2023-08-18_19-11-10'
+client 2023-08-18 19:11:10,402 [INFO] Sources: {"sources": {"__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "client.py": "33ca4f26368777ac06e01f9567b714a4b8063886", "lib/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/client.py": "ac2aa093c8e8bbc9569b9e2a3471bc64e58a2258", "lib/common.py": "611d8b29633d331eb19c9455ea3b5fa3284ed6df", "lib/external/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/external/ntplib.py": "4da8f970656505a40483206ef2b5d3dd5e81711d", "lib/server.py": "c7af63c31bb2fbedea4345f571f6e3507d268ada", "lib/source_hashes.py": "60a2e02193209e8d392803326208d5466342da18", "lib/summary.py": "aa92f0a3f975eecd44d3c0cd0236342ccc9f941d", "lib/time_sync.py": "80894ef2389e540781ff78de94db16aa4203a14e", "server.py": "c3f90f2f7eeb4db30727556d0c815ebc89b3d28b", "tests/unit/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "tests/unit/test_server.py": "948c1995d4008bc2aa6c4046a34ffa3858d6d671", "tests/unit/test_source_hashes.py": "00468a2907583c593e6574a1f6b404e4651c221a"}, "modules": {"ptd_client_server.lib.client": "lib/client.py", "ptd_client_server.lib.common": "lib/common.py", "ptd_client_server.lib.external.ntplib": "lib/external/ntplib.py", "ptd_client_server.lib.source_hashes": "lib/source_hashes.py", "ptd_client_server.lib.summary": "lib/summary.py", "ptd_client_server.lib.time_sync": "lib/time_sync.py"}}
+client 2023-08-18 19:11:10,402 [INFO] Running workload in ranging mode
+client 2023-08-18 19:11:10,402 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-08-18 19:11:10,414 [INFO] NTP:offset = -0.000 s, delay = 0.012 s 
+client 2023-08-18 19:11:10,414 [INFO] Sending command to the server: 'time'
+client 2023-08-18 19:11:10,415 [INFO] Got response: '1692382270.4147744'
+client 2023-08-18 19:11:10,415 [INFO] The time difference between the client and the server is within range 0.048 ms..0.957 ms
+client 2023-08-18 19:11:10,415 [INFO] Sending command to the server: 'session,2023-08-18_19-11-10,start,ranging'
+client 2023-08-18 19:11:38,508 [INFO] Got response: 'OK'
+client 2023-08-18 19:11:38,508 [INFO] Sending command to the server: 'time'
+client 2023-08-18 19:11:38,509 [INFO] Got response: '1692382298.5085654'
+client 2023-08-18 19:11:38,509 [INFO] The time difference between the client and the server is within range 0.129 ms..0.988 ms
+client 2023-08-18 19:11:38,509 [INFO] Running the workload 'axs byquery sut_name=eb6-kilt-snpe_dsp,loadgen_output,image_classifier,device=snpe,backend_type=dsp,loadgen_scenario=SingleStream,framework=kilt,model_name=resnet50,loadgen_mode=PerformanceOnly,loadgen_dataset_size=50000,loadgen_buffer_size=1024,loadgen_target_latency=9.7,_with_power+,symlink_to=/data/krai/work_collection/generated_by_power_measurement_on_run_427467a1cb1f481589264e09cfac9ac9/last_mlperf_logs,power_client_entrydic_path=/data/krai/work_collection/generated_by_power_measurement_on_run_427467a1cb1f481589264e09cfac9ac9/program_output.json'
+client 2023-08-18 19:21:41,588 [INFO] Sending command to the server: 'time'
+client 2023-08-18 19:21:41,590 [INFO] Got response: '1692382901.5902336'
+client 2023-08-18 19:21:41,590 [INFO] The time difference between the client and the server is within range -1.660 ms..0.269 ms
+client 2023-08-18 19:21:41,590 [INFO] Sending command to the server: 'session,2023-08-18_19-11-10,stop,ranging'
+client 2023-08-18 19:21:52,582 [INFO] Got response: 'OK'
+client 2023-08-18 19:21:52,582 [INFO] Sending command to the server: 'time'
+client 2023-08-18 19:21:52,583 [INFO] Got response: '1692382912.5834603'
+client 2023-08-18 19:21:52,583 [INFO] The time difference between the client and the server is within range -0.596 ms..0.079 ms
+client 2023-08-18 19:21:52,587 [INFO] Copying loadgen logs from '/data/krai/work_collection/generated_by_power_measurement_on_run_427467a1cb1f481589264e09cfac9ac9/last_mlperf_logs' to '/data/krai/work_collection/generated_by_power_measurement_on_run_427467a1cb1f481589264e09cfac9ac9/power_logs/ranging'
+client 2023-08-18 19:21:52,587 [INFO] Running workload in testing mode
+client 2023-08-18 19:21:52,588 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-08-18 19:21:52,607 [INFO] NTP:offset = -0.000 s, delay = 0.011 s 
+client 2023-08-18 19:21:52,607 [INFO] Sending command to the server: 'time'
+client 2023-08-18 19:21:52,608 [INFO] Got response: '1692382912.6082354'
+client 2023-08-18 19:21:52,608 [INFO] The time difference between the client and the server is within range -0.769 ms..0.161 ms
+client 2023-08-18 19:21:52,608 [INFO] Sending command to the server: 'session,2023-08-18_19-11-10,start,testing'
+client 2023-08-18 19:22:05,623 [INFO] Got response: 'OK'
+client 2023-08-18 19:22:05,623 [INFO] Sending command to the server: 'time'
+client 2023-08-18 19:22:05,624 [INFO] Got response: '1692382925.6244876'
+client 2023-08-18 19:22:05,624 [INFO] The time difference between the client and the server is within range -0.748 ms..0.134 ms
+client 2023-08-18 19:22:05,624 [INFO] Running the workload 'axs byquery sut_name=eb6-kilt-snpe_dsp,loadgen_output,image_classifier,device=snpe,backend_type=dsp,loadgen_scenario=SingleStream,framework=kilt,model_name=resnet50,loadgen_mode=PerformanceOnly,loadgen_dataset_size=50000,loadgen_buffer_size=1024,loadgen_target_latency=9.7,_with_power+,symlink_to=/data/krai/work_collection/generated_by_power_measurement_on_run_427467a1cb1f481589264e09cfac9ac9/last_mlperf_logs,power_client_entrydic_path=/data/krai/work_collection/generated_by_power_measurement_on_run_427467a1cb1f481589264e09cfac9ac9/program_output.json'
+client 2023-08-18 19:32:07,922 [INFO] Sending command to the server: 'time'
+client 2023-08-18 19:32:07,924 [INFO] Got response: '1692383527.9243693'
+client 2023-08-18 19:32:07,924 [INFO] The time difference between the client and the server is within range -2.074 ms..-0.065 ms
+client 2023-08-18 19:32:07,924 [INFO] Sending command to the server: 'session,2023-08-18_19-11-10,stop,testing'
+client 2023-08-18 19:32:18,677 [INFO] Got response: 'OK'
+client 2023-08-18 19:32:18,677 [INFO] Sending command to the server: 'time'
+client 2023-08-18 19:32:18,678 [INFO] Got response: '1692383538.6784344'
+client 2023-08-18 19:32:18,678 [INFO] The time difference between the client and the server is within range -0.975 ms..-0.232 ms
+client 2023-08-18 19:32:18,678 [INFO] Copying loadgen logs from '/data/krai/work_collection/generated_by_power_measurement_on_run_427467a1cb1f481589264e09cfac9ac9/last_mlperf_logs' to '/data/krai/work_collection/generated_by_power_measurement_on_run_427467a1cb1f481589264e09cfac9ac9/power_logs/run_1'
+client 2023-08-18 19:32:18,679 [INFO] Done runs

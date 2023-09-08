@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+# Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# TODO for now, this is loads the precompiled dev versions of the BERT TRT plugins from yko's TRT fork
+
+import os
+from importlib import import_module
+import pycuda
+import pycuda.autoprimaryctx
+import tensorrt as trt
+import pathlib
+
+from code.common import logging, dict_get
+from code.common.builder import TensorRTEngineBuilder
+from code.common.constants import Benchmark
+from code.common.systems.system_list import DETECTED_SYSTEM, SystemClassifications
+from code.plugin import load_trt_plugin_by_network
+from code.bert.tensorrt.builder_utils import get_onnx_fake_quant_weights, get_pytorch_fake_quant_weights
+from code.bert.tensorrt.int8_builder_var_seqlen import bert_squad_int8_var_seqlen
+from code.bert.tensorrt.int8_builder_vs_il import bert_squad_int8_vs_il
+from code.bert.tensorrt.fp16_builder_var_seqlen import bert_squad_fp16_var_seqlen
+from code.bert.tensorrt.omni_bert_config import BertOmniQAModelConfig
+
+# to run with a different seq_len, we need to run preprocessing again and point to the resulting folder
+# by setting the variable:
+# PREPROCESSED_DATA_DIR=/data/projects/bert/squad/v1.1/s128_q64_d128/
+
+
+class L4FcOutTacticSelector(trt.IAlgorithmSelector):
+    def select_algorithms(self, ctx, choices):
+        regex_to_tactic = {
+            # "_fc_out"  : 	int(0xefa70d52218f5041)
+            "_fc_out": int(-1177958131132575679)  # we need to force the negative value
+        }
+        for regex in regex_to_tactic:
+            if regex in ctx.name:
+                override_tactic = regex_to_tactic[regex]
+                filtered_idxs = [idx for idx, choice in enumerate(choices) if choice.algorithm_variant.tactic == override_tactic]
+                if len(filtered_idxs) == 0:
+                    pass
+                else:
+                    return filtered_idxs
+
+        # By default, say that all tactics are acceptable:
+        to_ret = [idx for idx, _ in enumerate(choices)]
+        return to_ret
+
+    def report_algorithms(self, ctx, choices):
+        pass
+
+
+class BERTBuilder(TensorRTEngineBuilder):
+    """To build engines in lwis mode, we expect a single sequence length and a single batch size."""
+
+    def __init__(self, args):
+        load_trt_plugin_by_network("bert", args)
+        workspace_size = dict_get(args, "workspace_size", default=(5 << 30))
+        logging.info(f"Using workspace size: {workspace_size}")
+        super().__init__(args, Benchmark.BERT, workspace_size=workspace_size)
+
+        self.seq_len = 384  # default sequence length
+
+        # The opt_shape provided to TRT builder in the optimization profile
+        self.bert_opt_seqlen = dict_get(args, "bert_opt_seqlen", default=self.seq_len)
+
+        self.batch_size = dict_get(args, "batch_size", default=1)
+
+        self.num_profiles = 1
+        if 'gpu_inference_streams' in args:
+            # use gpu_inference_streams to determine the number of duplicated profiles
+            # in the engine when not using lwis mode
+            self.num_profiles = args['gpu_inference_streams']
+
+        self.is_int8 = args['precision'] == 'int8'
+        self.energy_aware_kernels = dict_get(args, "energy_aware_kernels", default=False)
+
+        assert self.is_int8, "Only INT8 model is currently supported"
+        if self.is_int8:
+
+            model_path = dict_get(args, "model_path", default=None)
+            assert model_path, "No model path is provided"
+
+            # assume this is the model dir path
+            torch_model_dir = pathlib.Path(model_path)
+            self.model_path = str(torch_model_dir / "pytorch_model.bin")
+            self.bert_config = BertOmniQAModelConfig.from_json_file(torch_model_dir / "config.json")
+
+        self.enable_interleaved = False
+        if self.is_int8 and 'enable_interleaved' in args:
+            self.enable_interleaved = args['enable_interleaved']
+
+        # Small-Tile GEMM Plugin
+        # Since it doesn't support interleaved format, two options are mutually exclusive
+        self.use_small_tile_gemm_plugin = self.args.get("use_small_tile_gemm_plugin", False)
+
+        if self.enable_interleaved and self.use_small_tile_gemm_plugin:
+            assert False, "Small-Tile GEMM Plugin doesn't support interleaved format."
+
+        # if self.batch_size > 512:
+        # tactics selection is limited at very large batch sizes
+        self.builder_config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, 16 << 30)
+
+    def initialize(self):
+        self.initialized = True
+
+    def _get_engine_fpath(self, device_type, batch_size):
+        """Get engine file path given the config for this model."""
+        if device_type is None:
+            device_type = self.device_type
+
+        base_name = f"{self.name}-{self.scenario.valstr()}-{device_type}-{self.precision}"
+        bert_metadata = f"S_{self.seq_len}_B_{self.batch_size}_P_{self.num_profiles}_vs"
+        if self.enable_interleaved:
+            bert_metadata += "_il"
+        return f"{self.engine_dir}/{base_name}_{bert_metadata}.{self.config_ver}.plan"
+
+    def set_profiles_default(self, network):
+        # The harness expects i -> S -> B. This should be fine, since now there is only one S per engine
+        for i in range(self.num_profiles):
+            profile = self.builder.create_optimization_profile()
+            assert network.num_inputs == 4, "Unexpected number of inputs"
+            assert network.get_input(0).name == 'input_ids'
+            assert network.get_input(1).name == 'segment_ids'
+            assert network.get_input(2).name == 'cu_seqlens'
+            assert network.get_input(3).name == 'max_seqlen'
+
+            B = self.batch_size
+            S = self.seq_len
+            # TODO Like this, we can only control granularity using multiples of max_seqlen (B*S)
+            # Investigate if this can be improved otherwise
+            min_shape = (1,)  # TODO is it an issue to cover such a wide range?
+            max_shape = (B * S,)
+            opt_shape = (B * self.bert_opt_seqlen,)
+            profile.set_shape('input_ids', min_shape, opt_shape, max_shape)
+            profile.set_shape('segment_ids', min_shape, opt_shape, max_shape)
+            profile.set_shape('cu_seqlens', (1 + 1,), (B + 1,), (B + 1,))
+            profile.set_shape('max_seqlen', (1,), (S,), (S,))
+            if not profile:
+                raise RuntimeError("Invalid optimization profile!")
+            self.builder_config.add_optimization_profile(profile)
+            self.profiles.append(profile)
+
+    def set_profiles_fp8(self, network):
+        for i in range(self.num_profiles):
+            profile = self.builder.create_optimization_profile()
+            assert network.num_inputs == 3, "Unexpected number of inputs"
+            assert network.get_input(0).name == 'input_ids'
+            assert network.get_input(1).name == 'token_type_ids'
+            assert network.get_input(2).name == 'sequence_lengths'
+
+            B = self.batch_size
+            S = self.seq_len
+            min_shape = (1, 1)  # TODO is it an issue to cover such a wide range?
+            max_shape = (B, S)
+            opt_shape = (B, S)
+            profile.set_shape('input_ids', min_shape, opt_shape, max_shape)
+            profile.set_shape('token_type_ids', min_shape, opt_shape, max_shape)
+            profile.set_shape('sequence_lengths', (1,), (B,), (B,))
+            if not profile:
+                raise RuntimeError("Invalid optimization profile!")
+            self.builder_config.add_optimization_profile(profile)
+            self.profiles.append(profile)
+
+    def build_engines(self):
+        """
+        Calls self.initialize() if it has not been called yet.
+        Creates optimization profiles for multiple SeqLen and BatchSize combinations
+        Builds and saves the engine.
+        TODO do we also need multiple profiles per setting?
+        """
+
+        # Load weights
+        if self.model_path.endswith(".onnx"):
+            weights_dict = get_onnx_fake_quant_weights(self.model_path)
+        elif self.model_path.endswith(".bin"):
+            weights_dict = get_pytorch_fake_quant_weights(self.model_path)
+        else:
+            raise RuntimeError(f"Invalid model type: {self.model_path}")
+
+        if not self.initialized:
+            self.initialize()
+
+        # Create output directory
+        os.makedirs(self.engine_dir, exist_ok=True)
+
+        input_shape = (-1, )
+        cu_seqlen_shape = (-1,)
+
+        self.profiles = []
+
+        use_fp8 = self.args.get('use_fp8', False)
+
+        with self.builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)) as network:
+
+            # Looks like the tactics available with even large WS are not competitive anyway.
+            # Might be able to reduce this also
+
+            self.builder_config.set_flag(trt.BuilderFlag.FP16)
+            if self.is_int8:
+                self.builder_config.set_flag(trt.BuilderFlag.INT8)
+                if self.enable_interleaved:
+                    bert_squad_int8_vs_il(network, weights_dict, self.bert_config, input_shape, cu_seqlen_shape)
+                else:
+                    bert_squad_int8_var_seqlen(network, weights_dict, self.bert_config,
+                                               input_shape, cu_seqlen_shape, self.use_small_tile_gemm_plugin)
+            else:
+                bert_squad_fp16_var_seqlen(network, weights_dict, self.bert_config, input_shape, cu_seqlen_shape)
+
+            engine_name = self._get_engine_fpath(self.device_type, None)
+            logging.info(f"Building {engine_name}")
+
+            if use_fp8:
+                self.set_profiles_fp8(network)
+            else:
+                self.set_profiles_default(network)
+
+            # Apply tactic selector/filter to enforce sm89 energy aware kernels on L4:
+            if SystemClassifications.is_ada() and self.energy_aware_kernels and not use_fp8:
+                logging.info(f"Enforcing L4 FcOut tactics selection")
+                tactic_selector = L4FcOutTacticSelector()
+                self.builder_config.algorithm_selector = tactic_selector
+
+            # Build engines
+            serialized_engine = self.builder.build_serialized_network(network, self.builder_config)
+            assert serialized_engine is not None, "Engine Build Failed!"
+            with open(engine_name, 'wb') as f:
+                f.write(serialized_engine)
+
+    # BERT does not need calibration.
+    def calibrate(self):
+        logging.info("BERT does not need calibration.")

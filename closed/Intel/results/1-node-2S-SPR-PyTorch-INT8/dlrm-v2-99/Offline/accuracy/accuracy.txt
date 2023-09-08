@@ -1,0 +1,26 @@
+{
+    "TestScenario.Offline": {
+        "accuracy": 96.6053188909002,
+        "count": 146952,
+        "good_items": 86029355,
+        "mean": 0.14146088352265151,
+        "percentiles": {
+            "50.0": 0.13858139514923096,
+            "80.0": 0.16375513076782228,
+            "90.0": 0.17807862758636475,
+            "95.0": 0.1927734732627868,
+            "99.0": 0.2291916155815124,
+            "99.9": 0.29402505922317784
+        },
+        "qps": 692.0389476584567,
+        "roc_auc": 80.20245433226236,
+        "took": 212.34643006324768,
+        "total_items": 89052400
+    },
+    "cmdline": "Namespace(model='dlrm', model_path='/data/mlperf_data/dlrm_2/model/int8//dlrm-multihot-pytorch.pt', dataset='multihot-criteo', dataset_path='/data/mlperf_data/dlrm_2/data_npy/', profile='dlrm-multihot-pytorch', enable_profiling=False, scenario='Offline', test_num_workers=0, max_ind_range=40000000, data_sub_sample_rate=0.0, max_batchsize=500, output='/opt/workdir/code/dlrm2-99.9/pytorch-cpu-int8/output/pytorch-cpu/dlrm/Offline/accuracy', inputs=['continuous and categorical features'], outputs=['probability'], backend='pytorch-native', use_gpu=False, use_ipex=True, use_bf16=False, use_int8=True, calibration=False, int8_configure_dir='int8_configure.json', int8_model_dir='dlrm_int8.pt', threads=1, cache=0, accuracy=True, find_peak_performance=False, config='./mlperf.conf', user_config='./user.conf', duration=None, target_qps=None, max_latency=None, count_samples=None, count_queries=None, samples_per_query_multistream=None, samples_per_query_offline=204800, samples_to_aggregate_fix=None, samples_to_aggregate_min=None, samples_to_aggregate_max=None, samples_to_aggregate_quantile_file='/opt/workdir/code/dlrm2-99.9/pytorch-cpu-int8/tools/dist_quantile.txt', samples_to_aggregate_trace_file='dlrm_trace_of_aggregated_samples.txt', numpy_rand_seed=123)",
+    "runtime": "pytorch-native-dlrm",
+    "time": 1692087262,
+    "version": "2.1.0.dev20230715+cpu-cxx11-abi"
+}
+AUC=80.20245433226236
+hash=7eeb43f50c23384200ee7c7bfce4cc66ccf3acbdaeeb60ff9a2313e2b638e18f

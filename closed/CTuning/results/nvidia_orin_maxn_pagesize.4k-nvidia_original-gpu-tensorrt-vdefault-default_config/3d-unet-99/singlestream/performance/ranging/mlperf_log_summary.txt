@@ -1,0 +1,64 @@
+================================================
+MLPerf Results Summary
+================================================
+SUT name : Server_3DUNet
+Scenario : SingleStream
+Mode     : PerformanceOnly
+90th percentile latency (ns) : 3932552813
+Result is : INVALID
+  Min duration satisfied : Yes
+  Min queries satisfied : NO
+  Early stopping satisfied: Yes
+Recommendations:
+ * The test exited early, before enough queries were issued.
+   See the detailed log for why this may have occurred.
+Early Stopping Result:
+ * Processed at least 64 queries (148).
+ * Would discard 5 highest latency queries.
+ * Early stopping 90th percentile estimate: 4527018588
+ * Not enough queries processed for 99th percentile
+ early stopping estimate (would need to process at
+ least 662 total queries).
+
+================================================
+Additional Stats
+================================================
+QPS w/ loadgen overhead         : 0.49
+QPS w/o loadgen overhead        : 0.49
+
+Min latency (ns)                : 270482460
+Max latency (ns)                : 4536625489
+Mean latency (ns)               : 2037691630
+50.00 percentile latency (ns)   : 1586557493
+90.00 percentile latency (ns)   : 3932552813
+95.00 percentile latency (ns)   : 4527011113
+97.00 percentile latency (ns)   : 4527048149
+99.00 percentile latency (ns)   : 4536112354
+99.90 percentile latency (ns)   : 4536625489
+
+================================================
+Test Parameters Used
+================================================
+samples_per_query : 1
+target_qps : 0.27027
+target_latency (ns): 0
+max_async_queries : 1
+min_duration (ms): 300000
+max_duration (ms): 300000
+min_query_count : 172
+max_query_count : 0
+qsl_rng_seed : 148687905518835231
+sample_index_rng_seed : 520418551913322573
+schedule_rng_seed : 811580660758947900
+accuracy_log_rng_seed : 0
+accuracy_log_probability : 0
+accuracy_log_sampling_target : 0
+print_timestamps : 0
+performance_issue_unique : 0
+performance_issue_same : 0
+performance_issue_same_index : 0
+performance_sample_count : 43
+
+No warnings encountered during test.
+
+1 ERROR encountered. See detailed log.

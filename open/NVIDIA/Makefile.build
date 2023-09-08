@@ -1,0 +1,110 @@
+# Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#	 http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This Makefile contains all the variable and targets related to building the binaries for NVIDIA's MLPerf Inference
+# submission. This includes TensorRT plugins, and C++ harness binaries.
+
+
+include $(CURDIR)/Makefile.const
+
+
+# Specify debug options for build (default to Release build)
+ifeq ($(DEBUG),1)
+    BUILD_TYPE := Debug
+else
+    BUILD_TYPE := Release
+endif
+
+# Set the include directory for Loadgen header files
+INFERENCE_DIR = $(BUILD_DIR)/inference
+INFERENCE_URL = https://github.com/mlcommons/inference.git
+LOADGEN_INCLUDE_DIR ?= $(INFERENCE_DIR)/loadgen
+LOADGEN_LIB_DIR ?= $(LOADGEN_INCLUDE_DIR)/build
+INFERENCE_HASH = 80568f0822e9c6c417c3b1b25c0b4b111e9fb974
+
+# Set Environment variables to extracted contents
+export LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):/usr/local/cuda/lib64:/usr/lib/$(ARCH)-linux-gnu:$(LOADGEN_LIB_DIR)
+export HARNESS_LD_LIBRARY_PATH := $(LD_LIBRARY_PATH)  # LD_LIBRARY_PATH used during run_harness
+export LIBRARY_PATH := /usr/local/cuda/lib64:/usr/lib/$(ARCH)-linux-gnu:$(LOADGEN_LIB_DIR):$(LIBRARY_PATH)
+export PATH := /usr/local/cuda/bin:$(PATH)
+export CPATH := /usr/local/cuda/include:/usr/include/$(ARCH)-linux-gnu:/usr/include/$(ARCH)-linux-gnu/cub:$(CPATH)
+export CUDA_PATH := /usr/local/cuda
+export CCACHE_DISABLE=1
+export NUMBA_CACHE_DIR=$(BUILD_DIR)/cache
+
+# Set CUDA_DEVICE_MAX_CONNECTIONS to increase multi-stream performance.
+export CUDA_DEVICE_MAX_CONNECTIONS := 32
+
+# Build flags
+HARNESS_BUILD_FLAGS := -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DLOADGEN_INCLUDE_DIR=$(LOADGEN_INCLUDE_DIR) -DLOADGEN_LIB_DIR=$(LOADGEN_LIB_DIR)
+
+# Add symbolic links to scratch path if it exists.
+.PHONY: link_dirs
+link_dirs:
+	@mkdir -p build
+	@mkdir -p $(DATA_DIR)
+	@mkdir -p $(PREPROCESSED_DATA_DIR)
+	@mkdir -p $(MODEL_DIR)
+	@ln -sfn $(DATA_DIR) $(DATA_DIR_LINK)
+	@ln -sfn $(PREPROCESSED_DATA_DIR) $(PREPROCESSED_DATA_DIR_LINK)
+	@ln -sfn $(MODEL_DIR) $(MODEL_DIR_LINK)
+
+
+# Build all source codes.
+.PHONY: build
+build: clone_loadgen link_dirs
+	@$(MAKE) -f Makefile.build build_loadgen
+	@$(MAKE) -f Makefile.build build_harness
+
+
+# Clone LoadGen repo.
+.PHONY: clone_loadgen
+clone_loadgen:
+	@if [ ! -d $(LOADGEN_INCLUDE_DIR) ]; then \
+		echo "Cloning Official MLPerf Inference (For Loadgen Files)" \
+			&& git clone $(INFERENCE_URL) $(INFERENCE_DIR); \
+	fi
+	@echo "Updating Loadgen" \
+		&& cd $(INFERENCE_DIR) \
+		&& git fetch \
+		&& git checkout $(INFERENCE_HASH) \
+		&& git submodule update --init third_party/pybind \
+		&& git submodule update --init language/bert/DeepLearningExamples \
+		&& git submodule update --init vision/medical_imaging/3d-unet-brats19/nnUnet
+
+
+# Build LoadGen.
+.PHONY: build_loadgen
+build_loadgen:
+	@echo "Building loadgen..."
+	@if [ ! -e $(LOADGEN_LIB_DIR) ]; then \
+		mkdir $(LOADGEN_LIB_DIR); \
+	fi
+	@cd $(LOADGEN_LIB_DIR) \
+		&& cmake -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) .. \
+		&& make -j
+	@cd $(LOADGEN_INCLUDE_DIR) \
+		&& CFLAGS="-std=c++14 -O3" python setup.py bdist_wheel \
+		&& pip install --user --force-reinstall dist/mlperf_loadgen-*.whl
+
+
+# Build harness source codes.
+.PHONY: build_harness
+build_harness:
+	@echo "Building harness..."
+	@mkdir -p build/harness \
+		&& cd build/harness \
+		&& cmake $(HARNESS_BUILD_FLAGS) $(PROJECT_ROOT)/code/harness \
+		&& make -j
+	@echo "Finished building harness."

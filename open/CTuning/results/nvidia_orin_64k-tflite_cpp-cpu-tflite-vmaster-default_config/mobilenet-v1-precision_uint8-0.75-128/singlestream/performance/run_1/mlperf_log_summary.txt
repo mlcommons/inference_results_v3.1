@@ -1,0 +1,59 @@
+================================================
+MLPerf Results Summary
+================================================
+SUT name : TFLite_SUT
+Scenario : SingleStream
+Mode     : PerformanceOnly
+90th percentile latency (ns) : 3312806
+Result is : VALID
+  Min duration satisfied : Yes
+  Min queries satisfied : Yes
+  Early stopping satisfied: Yes
+Early Stopping Result:
+ * Processed at least 64 queries (181207).
+ * Would discard 17822 highest latency queries.
+ * Early stopping 90th percentile estimate: 3312838
+ * Early stopping 99th percentile estimate: 3323462
+
+================================================
+Additional Stats
+================================================
+QPS w/ loadgen overhead         : 302.01
+QPS w/o loadgen overhead        : 302.27
+
+Min latency (ns)                : 3289030
+Max latency (ns)                : 3653709
+Mean latency (ns)               : 3308338
+50.00 percentile latency (ns)   : 3308166
+90.00 percentile latency (ns)   : 3312806
+95.00 percentile latency (ns)   : 3315143
+97.00 percentile latency (ns)   : 3318214
+99.00 percentile latency (ns)   : 3323302
+99.90 percentile latency (ns)   : 3330919
+
+================================================
+Test Parameters Used
+================================================
+samples_per_query : 1
+target_qps : 2000
+target_latency (ns): 0
+max_async_queries : 1
+min_duration (ms): 600000
+max_duration (ms): 660000
+min_query_count : 100
+max_query_count : 0
+qsl_rng_seed : 148687905518835231
+sample_index_rng_seed : 520418551913322573
+schedule_rng_seed : 811580660758947900
+accuracy_log_rng_seed : 0
+accuracy_log_probability : 0
+accuracy_log_sampling_target : 0
+print_timestamps : 0
+performance_issue_unique : 0
+performance_issue_same : 0
+performance_issue_same_index : 0
+performance_sample_count : 1024
+
+No warnings encountered during test.
+
+No errors encountered during test.

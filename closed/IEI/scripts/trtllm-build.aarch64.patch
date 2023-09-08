@@ -1,0 +1,22 @@
+diff --git a/cpp/CMakeLists.txt b/cpp/CMakeLists.txt
+index 4fd3b305..805a79a3 100644
+--- a/cpp/CMakeLists.txt
++++ b/cpp/CMakeLists.txt
+@@ -103,7 +103,7 @@ set(CUDA_LIBRARIES ${CUDART_LIB})
+ find_library(RT_LIB rt)
+ 
+ # NCCL dependencies
+-set_ifndef(NCCL_LIB_DIR /usr/lib/x86_64-linux-gnu/)
++set_ifndef(NCCL_LIB_DIR /usr/lib/aarch64-linux-gnu/)
+ set_ifndef(NCCL_INCLUDE_DIR /usr/include/)
+ find_library(NCCL_LIB nccl HINTS ${NCCL_LIB_DIR})
+ 
+@@ -113,7 +113,7 @@ include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_ROOT_DIR}/include
+ 
+ # TRT dependencies
+ set_ifndef(TRT_LIB_DIR ${CMAKE_BINARY_DIR})
+-set_ifndef(TRT_INCLUDE_DIR /usr/include/x86_64-linux-gnu)
++set_ifndef(TRT_INCLUDE_DIR /usr/include/aarch64-linux-gnu)
+ set(TRT_LIB nvinfer)
+ find_library_create_target(${TRT_LIB} nvinfer SHARED ${TRT_LIB_DIR})
+ find_library_create_target(nvuffparser nvparsers SHARED ${TRT_LIB_DIR})

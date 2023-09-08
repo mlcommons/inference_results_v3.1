@@ -1,0 +1,55 @@
+client 2023-07-16 08:18:35,171 [INFO] Creating output directory '/home/arjun/mobilenet_results/valid_results/raspberrypi-tflite_armnn_cpp-cpu-armnn_tflite-v23.05-using_neon/mobilenet-v3-precision_float-small-minimalistic-224/singlestream/performance/tmp_power'
+client 2023-07-16 08:18:35,179 [INFO] Sending command to the server: 'mlcommons/power client v3'
+client 2023-07-16 08:18:35,183 [INFO] Got response: 'mlcommons/power server v3'
+client 2023-07-16 08:18:35,183 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-07-16 08:18:35,306 [INFO] NTP:offset = -0.043 s, delay = 0.104 s 
+client 2023-07-16 08:18:35,307 [INFO] Sending command to the server: 'time'
+client 2023-07-16 08:18:35,310 [INFO] Got response: '1689491915.229246'
+client 2023-07-16 08:18:35,311 [INFO] The time difference between the client and the server is within range 77.895 ms..81.848 ms
+client 2023-07-16 08:18:35,311 [INFO] Sending command to the server: 'new,,dc364748-7eda-4722-8bbe-11b2f9cd5cf0'
+client 2023-07-16 08:18:35,316 [INFO] Got response: 'OK 2023-07-16_08-18-35,21d22fcc-e3e5-4132-bcfc-cd9a6bd4962e'
+client 2023-07-16 08:18:35,316 [INFO] Session id is '2023-07-16_08-18-35'
+client 2023-07-16 08:18:35,316 [INFO] Sources: {"sources": {"__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "client.py": "33ca4f26368777ac06e01f9567b714a4b8063886", "lib/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/client.py": "ac2aa093c8e8bbc9569b9e2a3471bc64e58a2258", "lib/common.py": "611d8b29633d331eb19c9455ea3b5fa3284ed6df", "lib/external/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/external/ntplib.py": "4da8f970656505a40483206ef2b5d3dd5e81711d", "lib/server.py": "c7af63c31bb2fbedea4345f571f6e3507d268ada", "lib/source_hashes.py": "60a2e02193209e8d392803326208d5466342da18", "lib/summary.py": "aa92f0a3f975eecd44d3c0cd0236342ccc9f941d", "lib/time_sync.py": "122eba67a9abc85635223e054def53be1367ade2", "server.py": "c3f90f2f7eeb4db30727556d0c815ebc89b3d28b", "tests/unit/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "tests/unit/test_server.py": "948c1995d4008bc2aa6c4046a34ffa3858d6d671", "tests/unit/test_source_hashes.py": "00468a2907583c593e6574a1f6b404e4651c221a"}, "modules": {"ptd_client_server.lib.client": "lib/client.py", "ptd_client_server.lib.common": "lib/common.py", "ptd_client_server.lib.external.ntplib": "lib/external/ntplib.py", "ptd_client_server.lib.source_hashes": "lib/source_hashes.py", "ptd_client_server.lib.summary": "lib/summary.py", "ptd_client_server.lib.time_sync": "lib/time_sync.py"}}
+client 2023-07-16 08:18:35,317 [INFO] Running workload in ranging mode
+client 2023-07-16 08:18:35,317 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-07-16 08:18:35,349 [INFO] NTP:offset = 0.001 s, delay = 0.017 s 
+client 2023-07-16 08:18:35,349 [INFO] Sending command to the server: 'time'
+client 2023-07-16 08:18:35,352 [INFO] Got response: '1689491915.279331'
+client 2023-07-16 08:18:35,353 [INFO] The time difference between the client and the server is within range 70.190 ms..73.740 ms
+client 2023-07-16 08:18:35,353 [INFO] Sending command to the server: 'session,2023-07-16_08-18-35,start,ranging'
+client 2023-07-16 08:19:04,074 [INFO] Got response: 'OK'
+client 2023-07-16 08:19:04,075 [INFO] Sending command to the server: 'time'
+client 2023-07-16 08:19:04,079 [INFO] Got response: '1689491943.9985929'
+client 2023-07-16 08:19:04,080 [INFO] The time difference between the client and the server is within range 76.911 ms..81.520 ms
+client 2023-07-16 08:19:04,080 [INFO] Running the workload 'CM_MLPERF_RUN_COUNT=$(cat ${CM_RUN_DIR}/count.txt); echo ${CM_MLPERF_RUN_COUNT}; CM_MLPERF_RUN_COUNT=$((CM_MLPERF_RUN_COUNT+1)); echo ${CM_MLPERF_RUN_COUNT} > ${CM_RUN_DIR}/count.txt && if [ ${CM_MLPERF_RUN_COUNT} -eq "1" ]; then export CM_MLPERF_USER_CONF=${CM_MLPERF_RANGING_USER_CONF}; else export CM_MLPERF_USER_CONF=${CM_MLPERF_TESTING_USER_CONF}; fi && /home/arjun/run.out'
+client 2023-07-16 08:24:11,548 [INFO] Sending command to the server: 'time'
+client 2023-07-16 08:24:11,555 [INFO] Got response: '1689492251.472704'
+client 2023-07-16 08:24:11,556 [INFO] The time difference between the client and the server is within range 75.770 ms..83.202 ms
+client 2023-07-16 08:24:11,556 [INFO] Sending command to the server: 'session,2023-07-16_08-18-35,stop,ranging'
+client 2023-07-16 08:24:22,326 [INFO] Got response: 'OK'
+client 2023-07-16 08:24:22,327 [INFO] Sending command to the server: 'time'
+client 2023-07-16 08:24:22,330 [INFO] Got response: '1689492262.2459807'
+client 2023-07-16 08:24:22,330 [INFO] The time difference between the client and the server is within range 81.317 ms..84.809 ms
+client 2023-07-16 08:24:22,359 [INFO] Copying loadgen logs from '/home/arjun/mobilenet_results/valid_results/raspberrypi-tflite_armnn_cpp-cpu-armnn_tflite-v23.05-using_neon/mobilenet-v3-precision_float-small-minimalistic-224/singlestream/performance/run_1' to '/home/arjun/mobilenet_results/valid_results/raspberrypi-tflite_armnn_cpp-cpu-armnn_tflite-v23.05-using_neon/mobilenet-v3-precision_float-small-minimalistic-224/singlestream/performance/tmp_power/ranging'
+client 2023-07-16 08:24:22,362 [INFO] Running workload in testing mode
+client 2023-07-16 08:24:22,362 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-07-16 08:24:22,442 [INFO] NTP:offset = -0.024 s, delay = 0.062 s 
+client 2023-07-16 08:24:22,443 [INFO] Sending command to the server: 'time'
+client 2023-07-16 08:24:22,447 [INFO] Got response: '1689492262.367147'
+client 2023-07-16 08:24:22,447 [INFO] The time difference between the client and the server is within range 75.939 ms..80.165 ms
+client 2023-07-16 08:24:22,447 [INFO] Sending command to the server: 'session,2023-07-16_08-18-35,start,testing'
+client 2023-07-16 08:24:35,497 [INFO] Got response: 'OK'
+client 2023-07-16 08:24:35,498 [INFO] Sending command to the server: 'time'
+client 2023-07-16 08:24:35,503 [INFO] Got response: '1689492275.4145508'
+client 2023-07-16 08:24:35,503 [INFO] The time difference between the client and the server is within range 83.531 ms..89.194 ms
+client 2023-07-16 08:24:35,504 [INFO] Running the workload 'CM_MLPERF_RUN_COUNT=$(cat ${CM_RUN_DIR}/count.txt); echo ${CM_MLPERF_RUN_COUNT}; CM_MLPERF_RUN_COUNT=$((CM_MLPERF_RUN_COUNT+1)); echo ${CM_MLPERF_RUN_COUNT} > ${CM_RUN_DIR}/count.txt && if [ ${CM_MLPERF_RUN_COUNT} -eq "1" ]; then export CM_MLPERF_USER_CONF=${CM_MLPERF_RANGING_USER_CONF}; else export CM_MLPERF_USER_CONF=${CM_MLPERF_TESTING_USER_CONF}; fi && /home/arjun/run.out'
+client 2023-07-16 08:34:47,400 [INFO] Sending command to the server: 'time'
+client 2023-07-16 08:34:47,404 [INFO] Got response: '1689492887.3179533'
+client 2023-07-16 08:34:47,404 [INFO] The time difference between the client and the server is within range 82.219 ms..86.405 ms
+client 2023-07-16 08:34:47,404 [INFO] Sending command to the server: 'session,2023-07-16_08-18-35,stop,testing'
+client 2023-07-16 08:34:57,597 [INFO] Got response: 'OK'
+client 2023-07-16 08:34:57,598 [INFO] Sending command to the server: 'time'
+client 2023-07-16 08:34:57,603 [INFO] Got response: '1689492897.5163572'
+client 2023-07-16 08:34:57,603 [INFO] The time difference between the client and the server is within range 81.626 ms..87.110 ms
+client 2023-07-16 08:34:57,609 [INFO] Copying loadgen logs from '/home/arjun/mobilenet_results/valid_results/raspberrypi-tflite_armnn_cpp-cpu-armnn_tflite-v23.05-using_neon/mobilenet-v3-precision_float-small-minimalistic-224/singlestream/performance/run_1' to '/home/arjun/mobilenet_results/valid_results/raspberrypi-tflite_armnn_cpp-cpu-armnn_tflite-v23.05-using_neon/mobilenet-v3-precision_float-small-minimalistic-224/singlestream/performance/tmp_power/run_1'
+client 2023-07-16 08:34:57,612 [INFO] Done runs

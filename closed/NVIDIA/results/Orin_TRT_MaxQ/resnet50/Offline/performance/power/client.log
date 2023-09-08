@@ -1,0 +1,56 @@
+client 2023-08-14 18:29:09,847 [INFO] Sending command to the server: 'mlcommons/power client v3'
+client 2023-08-14 18:29:09,849 [INFO] Got response: 'mlcommons/power server v3'
+client 2023-08-14 18:29:09,849 [INFO] Sending command to the server: 'stop'
+client 2023-08-14 18:29:09,852 [INFO] Got response: 'OK'
+client 2023-08-14 18:29:09,852 [INFO] Synchronizing with the server and with ib-01.dc4-in.nvidia.com...
+client 2023-08-14 18:29:10,079 [INFO] NTP:offset = -0.018 s, delay = 0.219 s 
+client 2023-08-14 18:29:10,080 [INFO] Sending command to the server: 'time'
+client 2023-08-14 18:29:10,083 [INFO] Got response: '1692037750.0664399'
+client 2023-08-14 18:29:10,083 [INFO] The time difference between the client and the server is within range 13.535 ms..17.241 ms
+client 2023-08-14 18:29:10,083 [INFO] Sending command to the server: 'new,,2e563eb3-32cc-49f4-8275-8e8dfc112789'
+client 2023-08-14 18:29:10,087 [INFO] Got response: 'OK 2023-08-14_11-29-10,8275eca8-9e01-4b15-a0d0-de4536c75410'
+client 2023-08-14 18:29:10,087 [INFO] Session id is '2023-08-14_11-29-10'
+client 2023-08-14 18:29:10,087 [INFO] Sources: {"sources": {"__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "client.py": "33ca4f26368777ac06e01f9567b714a4b8063886", "lib/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/client.py": "ac2aa093c8e8bbc9569b9e2a3471bc64e58a2258", "lib/common.py": "611d8b29633d331eb19c9455ea3b5fa3284ed6df", "lib/external/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/external/ntplib.py": "4da8f970656505a40483206ef2b5d3dd5e81711d", "lib/server.py": "c7af63c31bb2fbedea4345f571f6e3507d268ada", "lib/source_hashes.py": "60a2e02193209e8d392803326208d5466342da18", "lib/summary.py": "aa92f0a3f975eecd44d3c0cd0236342ccc9f941d", "lib/time_sync.py": "122eba67a9abc85635223e054def53be1367ade2", "server.py": "c3f90f2f7eeb4db30727556d0c815ebc89b3d28b", "tests/unit/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "tests/unit/test_server.py": "948c1995d4008bc2aa6c4046a34ffa3858d6d671", "tests/unit/test_source_hashes.py": "00468a2907583c593e6574a1f6b404e4651c221a"}, "modules": {"ptd_client_server.lib.client": "lib/client.py", "ptd_client_server.lib.common": "lib/common.py", "ptd_client_server.lib.external.ntplib": "lib/external/ntplib.py", "ptd_client_server.lib.source_hashes": "lib/source_hashes.py", "ptd_client_server.lib.summary": "lib/summary.py", "ptd_client_server.lib.time_sync": "lib/time_sync.py"}}
+client 2023-08-14 18:29:10,088 [INFO] Running workload in ranging mode
+client 2023-08-14 18:29:10,088 [INFO] Synchronizing with the server and with ib-01.dc4-in.nvidia.com...
+client 2023-08-14 18:29:10,310 [INFO] NTP:offset = -0.018 s, delay = 0.218 s 
+client 2023-08-14 18:29:10,310 [INFO] Sending command to the server: 'time'
+client 2023-08-14 18:29:10,315 [INFO] Got response: '1692037750.2962399'
+client 2023-08-14 18:29:10,315 [INFO] The time difference between the client and the server is within range 14.060 ms..19.075 ms
+client 2023-08-14 18:29:10,315 [INFO] Sending command to the server: 'session,2023-08-14_11-29-10,start,ranging'
+client 2023-08-14 18:29:38,529 [INFO] Got response: 'OK'
+client 2023-08-14 18:29:38,530 [INFO] Sending command to the server: 'time'
+client 2023-08-14 18:29:38,535 [INFO] Got response: '1692037778.5177093'
+client 2023-08-14 18:29:38,537 [INFO] The time difference between the client and the server is within range 12.726 ms..19.139 ms
+client 2023-08-14 18:29:38,538 [INFO] Running the workload 'LOG_DIR=/home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp python3.8 -m code.main --benchmarks=resnet50 --scenarios=offline --config_ver=maxq --action="run_harness" \\\n\t\t2>&1 | tee -a /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/stdout.txt \\\n\t\t&& if [ ! -d /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/ranging_tmp ]; \\\n\t\t\tthen mkdir /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/ranging_tmp \\\n\t\t\t\t&& mv /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/* /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/ranging_tmp/ \\\n\t\t\t\t&& cp -v /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/ranging_tmp/*/*/*/mlperf_log_detail.txt /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/ \\\n\t\t\t\t&& cp -v /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/ranging_tmp/*/*/*/mlperf_log_summary.txt /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/; \\\n\t\t\telse mkdir /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/testing_tmp \\\n\t\t\t\t&& mv /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/* /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/testing_tmp/ \\\n\t\t\t\t&& cp -v /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/testing_tmp/*/*/*/mlperf_log_detail.txt /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/ \\\n\t\t\t\t&& cp -v /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/testing_tmp/*/*/*/mlperf_log_summary.txt /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/; fi'
+client 2023-08-14 18:40:47,385 [INFO] Sending command to the server: 'time'
+client 2023-08-14 18:40:47,389 [INFO] Got response: '1692038447.379274'
+client 2023-08-14 18:40:47,389 [INFO] The time difference between the client and the server is within range 6.007 ms..10.055 ms
+client 2023-08-14 18:40:47,389 [INFO] Sending command to the server: 'session,2023-08-14_11-29-10,stop,ranging'
+client 2023-08-14 18:40:57,584 [INFO] Got response: 'OK'
+client 2023-08-14 18:40:57,586 [INFO] Sending command to the server: 'time'
+client 2023-08-14 18:40:57,591 [INFO] Got response: '1692038457.581505'
+client 2023-08-14 18:40:57,593 [INFO] The time difference between the client and the server is within range 5.024 ms..11.625 ms
+client 2023-08-14 18:40:57,641 [INFO] Copying loadgen logs from '/home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp' to '/home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/2023-08-14_11-29-10/ranging'
+client 2023-08-14 18:40:57,645 [INFO] Running workload in testing mode
+client 2023-08-14 18:40:57,646 [INFO] Synchronizing with the server and with ib-01.dc4-in.nvidia.com...
+client 2023-08-14 18:40:57,882 [INFO] NTP:offset = -0.010 s, delay = 0.220 s 
+client 2023-08-14 18:40:57,883 [INFO] Sending command to the server: 'time'
+client 2023-08-14 18:40:57,888 [INFO] Got response: '1692038457.8778803'
+client 2023-08-14 18:40:57,889 [INFO] The time difference between the client and the server is within range 5.241 ms..11.138 ms
+client 2023-08-14 18:40:57,889 [INFO] Sending command to the server: 'session,2023-08-14_11-29-10,start,testing'
+client 2023-08-14 18:41:10,920 [INFO] Got response: 'OK'
+client 2023-08-14 18:41:10,922 [INFO] Sending command to the server: 'time'
+client 2023-08-14 18:41:10,928 [INFO] Got response: '1692038470.9187965'
+client 2023-08-14 18:41:10,930 [INFO] The time difference between the client and the server is within range 3.267 ms..11.143 ms
+client 2023-08-14 18:41:10,931 [INFO] Running the workload 'LOG_DIR=/home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp python3.8 -m code.main --benchmarks=resnet50 --scenarios=offline --config_ver=maxq --action="run_harness" \\\n\t\t2>&1 | tee -a /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/stdout.txt \\\n\t\t&& if [ ! -d /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/ranging_tmp ]; \\\n\t\t\tthen mkdir /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/ranging_tmp \\\n\t\t\t\t&& mv /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/* /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/ranging_tmp/ \\\n\t\t\t\t&& cp -v /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/ranging_tmp/*/*/*/mlperf_log_detail.txt /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/ \\\n\t\t\t\t&& cp -v /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/ranging_tmp/*/*/*/mlperf_log_summary.txt /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/; \\\n\t\t\telse mkdir /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/testing_tmp \\\n\t\t\t\t&& mv /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/* /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/testing_tmp/ \\\n\t\t\t\t&& cp -v /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/testing_tmp/*/*/*/mlperf_log_detail.txt /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/ \\\n\t\t\t\t&& cp -v /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/testing_tmp/*/*/*/mlperf_log_summary.txt /home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp/; fi'
+client 2023-08-14 18:52:21,680 [INFO] Sending command to the server: 'time'
+client 2023-08-14 18:52:21,684 [INFO] Got response: '1692039141.6846058'
+client 2023-08-14 18:52:21,684 [INFO] The time difference between the client and the server is within range -3.958 ms..-0.022 ms
+client 2023-08-14 18:52:21,684 [INFO] Sending command to the server: 'session,2023-08-14_11-29-10,stop,testing'
+client 2023-08-14 18:52:31,960 [INFO] Got response: 'OK'
+client 2023-08-14 18:52:31,962 [INFO] Sending command to the server: 'time'
+client 2023-08-14 18:52:31,969 [INFO] Got response: '1692039151.968492'
+client 2023-08-14 18:52:31,971 [INFO] The time difference between the client and the server is within range -5.684 ms..2.318 ms
+client 2023-08-14 18:52:31,982 [INFO] Copying loadgen logs from '/home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs_temp' to '/home/nvidia/mlperf-inference/closed/NVIDIA/build/power_logs/2023.08.14-18.28.22/2023-08-14_11-29-10/run_1'
+client 2023-08-14 18:52:31,990 [INFO] Done runs

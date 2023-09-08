@@ -1,0 +1,26 @@
+{
+    "TestScenario.Offline": {
+        "accuracy": 96.60555695298498,
+        "count": 21041,
+        "good_items": 86029567,
+        "mean": 0.26866428170286427,
+        "percentiles": {
+            "50.0": 0.26410531997680664,
+            "80.0": 0.29396724700927734,
+            "90.0": 0.30905961990356445,
+            "95.0": 0.35806870460510254,
+            "99.0": 0.4486242771148674,
+            "99.9": 1.2747986698150755
+        },
+        "qps": 107.60688350838075,
+        "roc_auc": 80.23400808344086,
+        "took": 195.5358180999756,
+        "total_items": 89052400
+    },
+    "cmdline": "Namespace(model='dlrm', model_path='/data/mlperf_data/dlrm/model/int8/dlrm-multihot-pytorch.pt', dataset='multihot-criteo', dataset_path='/data/mlperf_data/dlrm/inference', profile='dlrm-multihot-pytorch', enable_profiling=False, scenario='Offline', test_num_workers=0, max_ind_range=40000000, data_sub_sample_rate=0.0, max_batchsize=4096, output='/opt/workdir/code/dlrm2-99.9/pytorch-cpu-int8/output/pytorch-cpu/dlrm/Offline/accuracy', inputs=['continuous and categorical features'], outputs=['probability'], backend='pytorch-native', use_gpu=False, use_ipex=True, use_bf16=False, use_int8=True, calibration=False, int8_configure_dir='int8_configure.json', int8_model_dir='dlrm_int8.pt', threads=1, cache=0, accuracy=True, find_peak_performance=False, config='./mlperf.conf', user_config='./user.conf', duration=None, target_qps=None, max_latency=None, count_samples=None, count_queries=None, samples_per_query_multistream=None, samples_per_query_offline=204800, samples_to_aggregate_fix=None, samples_to_aggregate_min=None, samples_to_aggregate_max=None, samples_to_aggregate_quantile_file='/opt/workdir/code/dlrm2-99.9/pytorch-cpu-int8/tools/dist_quantile.txt', samples_to_aggregate_trace_file='dlrm_trace_of_aggregated_samples.txt', numpy_rand_seed=123)",
+    "runtime": "pytorch-native-dlrm",
+    "time": 1692246977,
+    "version": "2.1.0.dev20230715+cpu-cxx11-abi"
+}
+AUC=80.23400808344086
+hash=36026e467de2dffb01940fb245595c73bc6b6fe500f7375c722c0833408dfe3e

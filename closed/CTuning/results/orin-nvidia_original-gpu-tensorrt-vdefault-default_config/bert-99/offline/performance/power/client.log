@@ -1,0 +1,55 @@
+client 2023-07-27 05:21:32,513 [INFO] Creating output directory '/home/arjun/results_dir/valid_results/orin-nvidia_original-gpu-tensorrt-vdefault-default_config/bert-99/offline/performance/tmp_power'
+client 2023-07-27 05:21:32,521 [INFO] Sending command to the server: 'mlcommons/power client v3'
+client 2023-07-27 05:21:32,526 [INFO] Got response: 'mlcommons/power server v3'
+client 2023-07-27 05:21:32,527 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-07-27 05:21:32,607 [INFO] NTP:offset = -0.002 s, delay = 0.022 s 
+client 2023-07-27 05:21:32,608 [INFO] Sending command to the server: 'time'
+client 2023-07-27 05:21:32,613 [INFO] Got response: '1690431692.5446062'
+client 2023-07-27 05:21:32,614 [INFO] The time difference between the client and the server is within range 64.137 ms..70.166 ms
+client 2023-07-27 05:21:32,616 [INFO] Sending command to the server: 'new,,1db54a7a-8a9c-491e-92c1-2a598774de88'
+client 2023-07-27 05:21:32,621 [INFO] Got response: 'OK 2023-07-27_05-21-32,29bced11-a10d-47b8-a5bd-8d67c8198de3'
+client 2023-07-27 05:21:32,622 [INFO] Session id is '2023-07-27_05-21-32'
+client 2023-07-27 05:21:32,623 [INFO] Sources: {"sources": {"__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "client.py": "33ca4f26368777ac06e01f9567b714a4b8063886", "lib/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/client.py": "ac2aa093c8e8bbc9569b9e2a3471bc64e58a2258", "lib/common.py": "611d8b29633d331eb19c9455ea3b5fa3284ed6df", "lib/external/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/external/ntplib.py": "4da8f970656505a40483206ef2b5d3dd5e81711d", "lib/server.py": "c7af63c31bb2fbedea4345f571f6e3507d268ada", "lib/source_hashes.py": "60a2e02193209e8d392803326208d5466342da18", "lib/summary.py": "aa92f0a3f975eecd44d3c0cd0236342ccc9f941d", "lib/time_sync.py": "122eba67a9abc85635223e054def53be1367ade2", "server.py": "c3f90f2f7eeb4db30727556d0c815ebc89b3d28b", "tests/unit/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "tests/unit/test_server.py": "948c1995d4008bc2aa6c4046a34ffa3858d6d671", "tests/unit/test_source_hashes.py": "00468a2907583c593e6574a1f6b404e4651c221a"}, "modules": {"ptd_client_server.lib.client": "lib/client.py", "ptd_client_server.lib.common": "lib/common.py", "ptd_client_server.lib.external.ntplib": "lib/external/ntplib.py", "ptd_client_server.lib.source_hashes": "lib/source_hashes.py", "ptd_client_server.lib.summary": "lib/summary.py", "ptd_client_server.lib.time_sync": "lib/time_sync.py"}}
+client 2023-07-27 05:21:32,625 [INFO] Running workload in ranging mode
+client 2023-07-27 05:21:32,626 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-07-27 05:21:32,653 [INFO] NTP:offset = -0.003 s, delay = 0.015 s 
+client 2023-07-27 05:21:32,654 [INFO] Sending command to the server: 'time'
+client 2023-07-27 05:21:32,659 [INFO] Got response: '1690431692.5844405'
+client 2023-07-27 05:21:32,660 [INFO] The time difference between the client and the server is within range 70.366 ms..75.982 ms
+client 2023-07-27 05:21:32,661 [INFO] Sending command to the server: 'session,2023-07-27_05-21-32,start,ranging'
+client 2023-07-27 05:22:01,376 [INFO] Got response: 'OK'
+client 2023-07-27 05:22:01,380 [INFO] Sending command to the server: 'time'
+client 2023-07-27 05:22:01,396 [INFO] Got response: '1690431721.3102546'
+client 2023-07-27 05:22:01,397 [INFO] The time difference between the client and the server is within range 70.347 ms..86.992 ms
+client 2023-07-27 05:22:01,398 [INFO] Running the workload 'CM_MLPERF_RUN_COUNT=$(cat ${CM_RUN_DIR}/count.txt); echo ${CM_MLPERF_RUN_COUNT}; CM_MLPERF_RUN_COUNT=$((CM_MLPERF_RUN_COUNT+1)); echo ${CM_MLPERF_RUN_COUNT} > ${CM_RUN_DIR}/count.txt && if [ ${CM_MLPERF_RUN_COUNT} -eq "1" ]; then export CM_MLPERF_USER_CONF=${CM_MLPERF_RANGING_USER_CONF}; else export CM_MLPERF_USER_CONF=${CM_MLPERF_TESTING_USER_CONF}; fi && make run_harness RUN_ARGS=" --benchmarks=bert --scenarios=offline --test_mode=PerformanceOnly --offline_expected_qps=270 --single_stream_expected_latency_ns=12000000 --config_ver=maxq --user_conf_path=${CM_MLPERF_USER_CONF} --mlperf_conf_path=/mount/CM/repos/local/cache/2048b9e58c0246cd/inference/mlperf.conf --no_audit_verify "'
+client 2023-07-27 05:29:41,495 [INFO] Sending command to the server: 'time'
+client 2023-07-27 05:29:41,503 [INFO] Got response: '1690432181.4316335'
+client 2023-07-27 05:29:41,504 [INFO] The time difference between the client and the server is within range 63.396 ms..72.461 ms
+client 2023-07-27 05:29:41,505 [INFO] Sending command to the server: 'session,2023-07-27_05-21-32,stop,ranging'
+client 2023-07-27 05:29:52,647 [INFO] Got response: 'OK'
+client 2023-07-27 05:29:52,649 [INFO] Sending command to the server: 'time'
+client 2023-07-27 05:29:52,655 [INFO] Got response: '1690432192.5802014'
+client 2023-07-27 05:29:52,657 [INFO] The time difference between the client and the server is within range 69.231 ms..76.633 ms
+client 2023-07-27 05:29:52,714 [INFO] Copying loadgen logs from '/home/arjun/results_dir/valid_results/orin-nvidia_original-gpu-tensorrt-vdefault-default_config/bert-99/offline/performance/run_1' to '/home/arjun/results_dir/valid_results/orin-nvidia_original-gpu-tensorrt-vdefault-default_config/bert-99/offline/performance/tmp_power/ranging'
+client 2023-07-27 05:29:52,721 [INFO] Running workload in testing mode
+client 2023-07-27 05:29:52,723 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-07-27 05:29:52,754 [INFO] NTP:offset = -0.001 s, delay = 0.016 s 
+client 2023-07-27 05:29:52,755 [INFO] Sending command to the server: 'time'
+client 2023-07-27 05:29:52,761 [INFO] Got response: '1690432192.6821125'
+client 2023-07-27 05:29:52,762 [INFO] The time difference between the client and the server is within range 73.062 ms..80.022 ms
+client 2023-07-27 05:29:52,763 [INFO] Sending command to the server: 'session,2023-07-27_05-21-32,start,testing'
+client 2023-07-27 05:30:05,805 [INFO] Got response: 'OK'
+client 2023-07-27 05:30:05,807 [INFO] Sending command to the server: 'time'
+client 2023-07-27 05:30:05,813 [INFO] Got response: '1690432205.7385938'
+client 2023-07-27 05:30:05,814 [INFO] The time difference between the client and the server is within range 68.857 ms..75.976 ms
+client 2023-07-27 05:30:05,815 [INFO] Running the workload 'CM_MLPERF_RUN_COUNT=$(cat ${CM_RUN_DIR}/count.txt); echo ${CM_MLPERF_RUN_COUNT}; CM_MLPERF_RUN_COUNT=$((CM_MLPERF_RUN_COUNT+1)); echo ${CM_MLPERF_RUN_COUNT} > ${CM_RUN_DIR}/count.txt && if [ ${CM_MLPERF_RUN_COUNT} -eq "1" ]; then export CM_MLPERF_USER_CONF=${CM_MLPERF_RANGING_USER_CONF}; else export CM_MLPERF_USER_CONF=${CM_MLPERF_TESTING_USER_CONF}; fi && make run_harness RUN_ARGS=" --benchmarks=bert --scenarios=offline --test_mode=PerformanceOnly --offline_expected_qps=270 --single_stream_expected_latency_ns=12000000 --config_ver=maxq --user_conf_path=${CM_MLPERF_USER_CONF} --mlperf_conf_path=/mount/CM/repos/local/cache/2048b9e58c0246cd/inference/mlperf.conf --no_audit_verify "'
+client 2023-07-27 05:43:17,932 [INFO] Sending command to the server: 'time'
+client 2023-07-27 05:43:17,940 [INFO] Got response: '1690432997.8626146'
+client 2023-07-27 05:43:17,941 [INFO] The time difference between the client and the server is within range 68.860 ms..78.685 ms
+client 2023-07-27 05:43:17,942 [INFO] Sending command to the server: 'session,2023-07-27_05-21-32,stop,testing'
+client 2023-07-27 05:43:29,277 [INFO] Got response: 'OK'
+client 2023-07-27 05:43:29,278 [INFO] Sending command to the server: 'time'
+client 2023-07-27 05:43:29,284 [INFO] Got response: '1690433009.1997569'
+client 2023-07-27 05:43:29,285 [INFO] The time difference between the client and the server is within range 78.751 ms..85.789 ms
+client 2023-07-27 05:43:29,299 [INFO] Copying loadgen logs from '/home/arjun/results_dir/valid_results/orin-nvidia_original-gpu-tensorrt-vdefault-default_config/bert-99/offline/performance/run_1' to '/home/arjun/results_dir/valid_results/orin-nvidia_original-gpu-tensorrt-vdefault-default_config/bert-99/offline/performance/tmp_power/run_1'
+client 2023-07-27 05:43:29,307 [INFO] Done runs

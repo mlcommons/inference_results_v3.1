@@ -1,0 +1,55 @@
+client 2023-09-05 10:30:40,929 [INFO] Creating output directory '/home/arjun/results_dir/valid_results/phoenix_Amd_Am5-reference-cpu-onnxruntime-v1.15.1-default_config/bert-99/offline/performance/tmp_power'
+client 2023-09-05 10:30:41,125 [INFO] Sending command to the server: 'mlcommons/power client v3'
+client 2023-09-05 10:30:41,128 [INFO] Got response: 'mlcommons/power server v3'
+client 2023-09-05 10:30:41,128 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-09-05 10:30:41,149 [INFO] NTP:offset = -0.001 s, delay = 0.020 s 
+client 2023-09-05 10:30:41,149 [INFO] Sending command to the server: 'time'
+client 2023-09-05 10:30:41,151 [INFO] Got response: '1693906241.151861'
+client 2023-09-05 10:30:41,151 [INFO] The time difference between the client and the server is within range -1.962 ms..-0.032 ms
+client 2023-09-05 10:30:41,151 [INFO] Sending command to the server: 'new,,76d3d0b8-c38c-4863-82b7-b85931217045'
+client 2023-09-05 10:30:41,153 [INFO] Got response: 'OK 2023-09-05_09-30-41,341ab3a4-b443-4b74-94b5-5edd3aa941da'
+client 2023-09-05 10:30:41,153 [INFO] Session id is '2023-09-05_09-30-41'
+client 2023-09-05 10:30:41,153 [INFO] Sources: {"sources": {"__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "client.py": "33ca4f26368777ac06e01f9567b714a4b8063886", "lib/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/client.py": "ac2aa093c8e8bbc9569b9e2a3471bc64e58a2258", "lib/common.py": "611d8b29633d331eb19c9455ea3b5fa3284ed6df", "lib/external/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/external/ntplib.py": "4da8f970656505a40483206ef2b5d3dd5e81711d", "lib/server.py": "c7af63c31bb2fbedea4345f571f6e3507d268ada", "lib/source_hashes.py": "60a2e02193209e8d392803326208d5466342da18", "lib/summary.py": "aa92f0a3f975eecd44d3c0cd0236342ccc9f941d", "lib/time_sync.py": "122eba67a9abc85635223e054def53be1367ade2", "server.py": "c3f90f2f7eeb4db30727556d0c815ebc89b3d28b", "tests/unit/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "tests/unit/test_server.py": "948c1995d4008bc2aa6c4046a34ffa3858d6d671", "tests/unit/test_source_hashes.py": "00468a2907583c593e6574a1f6b404e4651c221a"}, "modules": {"ptd_client_server.lib.client": "lib/client.py", "ptd_client_server.lib.common": "lib/common.py", "ptd_client_server.lib.external.ntplib": "lib/external/ntplib.py", "ptd_client_server.lib.source_hashes": "lib/source_hashes.py", "ptd_client_server.lib.summary": "lib/summary.py", "ptd_client_server.lib.time_sync": "lib/time_sync.py"}}
+client 2023-09-05 10:30:41,153 [INFO] Running workload in ranging mode
+client 2023-09-05 10:30:41,153 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-09-05 10:30:41,176 [INFO] NTP:offset = 0.003 s, delay = 0.022 s 
+client 2023-09-05 10:30:41,176 [INFO] Sending command to the server: 'time'
+client 2023-09-05 10:30:41,177 [INFO] Got response: '1693906241.177949'
+client 2023-09-05 10:30:41,178 [INFO] The time difference between the client and the server is within range -1.724 ms..0.053 ms
+client 2023-09-05 10:30:41,178 [INFO] Sending command to the server: 'session,2023-09-05_09-30-41,start,ranging'
+client 2023-09-05 10:31:09,271 [INFO] Got response: 'OK'
+client 2023-09-05 10:31:09,271 [INFO] Sending command to the server: 'time'
+client 2023-09-05 10:31:09,274 [INFO] Got response: '1693906269.272517'
+client 2023-09-05 10:31:09,274 [INFO] The time difference between the client and the server is within range -1.291 ms..2.383 ms
+client 2023-09-05 10:31:09,274 [INFO] Running the workload 'CM_MLPERF_RUN_COUNT=$(cat ${CM_RUN_DIR}/count.txt); echo ${CM_MLPERF_RUN_COUNT}; CM_MLPERF_RUN_COUNT=$((CM_MLPERF_RUN_COUNT+1)); echo ${CM_MLPERF_RUN_COUNT} > ${CM_RUN_DIR}/count.txt && if [ ${CM_MLPERF_RUN_COUNT} -eq "1" ]; then export CM_MLPERF_USER_CONF=${CM_MLPERF_RANGING_USER_CONF}; else export CM_MLPERF_USER_CONF=${CM_MLPERF_TESTING_USER_CONF}; fi && /usr/bin/python3 run.py --backend=onnxruntime --scenario=Offline --mlperf_conf "/home/arjun/CM/repos/local/cache/fbd173afb8284a45/inference/mlperf.conf" --user_conf "${CM_MLPERF_USER_CONF}"'
+client 2023-09-05 10:43:51,548 [INFO] Sending command to the server: 'time'
+client 2023-09-05 10:43:51,549 [INFO] Got response: '1693907031.5504978'
+client 2023-09-05 10:43:51,549 [INFO] The time difference between the client and the server is within range -1.900 ms..-0.567 ms
+client 2023-09-05 10:43:51,549 [INFO] Sending command to the server: 'session,2023-09-05_09-30-41,stop,ranging'
+client 2023-09-05 10:44:02,446 [INFO] Got response: 'OK'
+client 2023-09-05 10:44:02,447 [INFO] Sending command to the server: 'time'
+client 2023-09-05 10:44:02,449 [INFO] Got response: '1693907042.4503086'
+client 2023-09-05 10:44:02,449 [INFO] The time difference between the client and the server is within range -3.226 ms..-0.529 ms
+client 2023-09-05 10:44:02,451 [INFO] Copying loadgen logs from '/home/arjun/results_dir/valid_results/phoenix_Amd_Am5-reference-cpu-onnxruntime-v1.15.1-default_config/bert-99/offline/performance/run_1' to '/home/arjun/results_dir/valid_results/phoenix_Amd_Am5-reference-cpu-onnxruntime-v1.15.1-default_config/bert-99/offline/performance/tmp_power/ranging'
+client 2023-09-05 10:44:02,451 [INFO] Running workload in testing mode
+client 2023-09-05 10:44:02,451 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-09-05 10:44:02,470 [INFO] NTP:offset = 0.001 s, delay = 0.018 s 
+client 2023-09-05 10:44:02,470 [INFO] Sending command to the server: 'time'
+client 2023-09-05 10:44:02,472 [INFO] Got response: '1693907042.4726732'
+client 2023-09-05 10:44:02,472 [INFO] The time difference between the client and the server is within range -2.340 ms..-0.505 ms
+client 2023-09-05 10:44:02,472 [INFO] Sending command to the server: 'session,2023-09-05_09-30-41,start,testing'
+client 2023-09-05 10:44:15,493 [INFO] Got response: 'OK'
+client 2023-09-05 10:44:15,493 [INFO] Sending command to the server: 'time'
+client 2023-09-05 10:44:15,495 [INFO] Got response: '1693907055.4960515'
+client 2023-09-05 10:44:15,495 [INFO] The time difference between the client and the server is within range -2.148 ms..-0.391 ms
+client 2023-09-05 10:44:15,495 [INFO] Running the workload 'CM_MLPERF_RUN_COUNT=$(cat ${CM_RUN_DIR}/count.txt); echo ${CM_MLPERF_RUN_COUNT}; CM_MLPERF_RUN_COUNT=$((CM_MLPERF_RUN_COUNT+1)); echo ${CM_MLPERF_RUN_COUNT} > ${CM_RUN_DIR}/count.txt && if [ ${CM_MLPERF_RUN_COUNT} -eq "1" ]; then export CM_MLPERF_USER_CONF=${CM_MLPERF_RANGING_USER_CONF}; else export CM_MLPERF_USER_CONF=${CM_MLPERF_TESTING_USER_CONF}; fi && /usr/bin/python3 run.py --backend=onnxruntime --scenario=Offline --mlperf_conf "/home/arjun/CM/repos/local/cache/fbd173afb8284a45/inference/mlperf.conf" --user_conf "${CM_MLPERF_USER_CONF}"'
+client 2023-09-05 12:15:19,027 [INFO] Sending command to the server: 'time'
+client 2023-09-05 12:15:19,194 [INFO] Got response: '1693912519.194097'
+client 2023-09-05 12:15:19,194 [INFO] The time difference between the client and the server is within range -166.841 ms..0.065 ms
+client 2023-09-05 12:15:19,194 [INFO] Sending command to the server: 'session,2023-09-05_09-30-41,stop,testing'
+client 2023-09-05 12:15:29,583 [INFO] Got response: 'OK'
+client 2023-09-05 12:15:29,583 [INFO] Sending command to the server: 'time'
+client 2023-09-05 12:15:29,585 [INFO] Got response: '1693912529.5849416'
+client 2023-09-05 12:15:29,585 [INFO] The time difference between the client and the server is within range -1.745 ms..0.484 ms
+client 2023-09-05 12:15:29,585 [INFO] Copying loadgen logs from '/home/arjun/results_dir/valid_results/phoenix_Amd_Am5-reference-cpu-onnxruntime-v1.15.1-default_config/bert-99/offline/performance/run_1' to '/home/arjun/results_dir/valid_results/phoenix_Amd_Am5-reference-cpu-onnxruntime-v1.15.1-default_config/bert-99/offline/performance/tmp_power/run_1'
+client 2023-09-05 12:15:29,586 [INFO] Done runs

@@ -1,0 +1,26 @@
+{
+    "TestScenario.Offline": {
+        "accuracy": 96.60546262649855,
+        "count": 146952,
+        "good_items": 86029483,
+        "mean": 0.15802587560242187,
+        "percentiles": {
+            "50.0": 0.15555906295776367,
+            "80.0": 0.18388071060180664,
+            "90.0": 0.19987885951995848,
+            "95.0": 0.2163375377655028,
+            "99.0": 0.2539004468917846,
+            "99.9": 0.32254712939262414
+        },
+        "qps": 611.433877543697,
+        "roc_auc": 80.23444046649396,
+        "took": 240.3399703502655,
+        "total_items": 89052400
+    },
+    "cmdline": "Namespace(model='dlrm', model_path='/data/mlperf_data/dlrm_2/model/dlrm-multihot-pytorch.pt', dataset='multihot-criteo', dataset_path='/data/mlperf_data/dlrm_2/data_npy', profile='dlrm-multihot-pytorch', enable_profiling=False, scenario='Offline', test_num_workers=0, max_ind_range=40000000, data_sub_sample_rate=0.0, max_batchsize=500, output='/opt/workdir/code/dlrm2-99.9/pytorch-cpu-int8/output/pytorch-cpu/dlrm/Offline/accuracy', inputs=['continuous and categorical features'], outputs=['probability'], backend='pytorch-native', use_gpu=False, use_ipex=True, use_bf16=False, use_int8=True, calibration=False, int8_configure_dir='int8_configure.json', int8_model_dir='dlrm_int8.pt', threads=1, cache=0, accuracy=True, find_peak_performance=False, config='./mlperf.conf', user_config='./user.conf', duration=None, target_qps=None, max_latency=None, count_samples=None, count_queries=None, samples_per_query_multistream=None, samples_per_query_offline=204800, samples_to_aggregate_fix=None, samples_to_aggregate_min=None, samples_to_aggregate_max=None, samples_to_aggregate_quantile_file='/opt/workdir/code/dlrm2-99.9/pytorch-cpu-int8/tools/dist_quantile.txt', samples_to_aggregate_trace_file='dlrm_trace_of_aggregated_samples.txt', numpy_rand_seed=123)",
+    "runtime": "pytorch-native-dlrm",
+    "time": 1691631877,
+    "version": "2.1.0.dev20230715+cpu-cxx11-abi"
+}
+AUC=80.23444046649396
+hash=b4fe6666e595fcdc2c5f95ca09fcce90238828946f8bd50b0ace55ad6b76d5fe

@@ -1,0 +1,14 @@
+--- Makefile.build
++++ Makefile.build
+@@ -348,9 +348,9 @@ ifeq ($(USE_RELEASE_TRTLLM), 1)
+ endif
+ 	@echo "Building TRT-LLM..."
+ 	@cd $(TRTLLM_DIR) \
+-		&& python3 scripts/build_wheel.py --clean --cpp_only -a=90 \
++		&& python3 scripts/build_wheel.py --clean --cpp_only -a="90;89-real" \
+ 		&& mv cpp/build cpp/build_cpp \
+-		&& python3 scripts/build_wheel.py --clean -a=90
++		&& python3 scripts/build_wheel.py --clean -a="90;89-real"
+ endif
+ 	@echo "Installing TRT-LLM wheel..."
+ 	@pip install $(TRTLLM_BUILD_DIR)/tensorrt*.whl

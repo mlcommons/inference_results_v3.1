@@ -1,0 +1,55 @@
+client 2023-08-13 13:04:14,712 [INFO] Creating output directory '/home/arjun/results_dir/valid_results/orin-reference-cpu-deepsparse-vdefault-default_config/obert-large-pruned95_quant-none-vnni-bert-99/offline/performance/tmp_power'
+client 2023-08-13 13:04:14,716 [INFO] Sending command to the server: 'mlcommons/power client v3'
+client 2023-08-13 13:04:14,719 [INFO] Got response: 'mlcommons/power server v3'
+client 2023-08-13 13:04:14,719 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-08-13 13:04:14,759 [INFO] NTP:offset = -0.004 s, delay = 0.014 s 
+client 2023-08-13 13:04:14,759 [INFO] Sending command to the server: 'time'
+client 2023-08-13 13:04:14,761 [INFO] Got response: '1691928254.5285783'
+client 2023-08-13 13:04:14,761 [INFO] The time difference between the client and the server is within range 230.588 ms..233.389 ms
+client 2023-08-13 13:04:14,762 [INFO] Sending command to the server: 'new,,b0d4bc35-94fb-45f4-ab3b-c6a9dc64ea10'
+client 2023-08-13 13:04:14,765 [INFO] Got response: 'OK 2023-08-13_13-04-14,e04fc3a7-eb61-4b4b-b80f-6ae5ae91529f'
+client 2023-08-13 13:04:14,765 [INFO] Session id is '2023-08-13_13-04-14'
+client 2023-08-13 13:04:14,765 [INFO] Sources: {"sources": {"__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "client.py": "33ca4f26368777ac06e01f9567b714a4b8063886", "lib/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/client.py": "ac2aa093c8e8bbc9569b9e2a3471bc64e58a2258", "lib/common.py": "611d8b29633d331eb19c9455ea3b5fa3284ed6df", "lib/external/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/external/ntplib.py": "4da8f970656505a40483206ef2b5d3dd5e81711d", "lib/server.py": "c7af63c31bb2fbedea4345f571f6e3507d268ada", "lib/source_hashes.py": "60a2e02193209e8d392803326208d5466342da18", "lib/summary.py": "aa92f0a3f975eecd44d3c0cd0236342ccc9f941d", "lib/time_sync.py": "80894ef2389e540781ff78de94db16aa4203a14e", "server.py": "c3f90f2f7eeb4db30727556d0c815ebc89b3d28b", "tests/unit/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "tests/unit/test_server.py": "948c1995d4008bc2aa6c4046a34ffa3858d6d671", "tests/unit/test_source_hashes.py": "00468a2907583c593e6574a1f6b404e4651c221a"}, "modules": {"ptd_client_server.lib.client": "lib/client.py", "ptd_client_server.lib.common": "lib/common.py", "ptd_client_server.lib.external.ntplib": "lib/external/ntplib.py", "ptd_client_server.lib.source_hashes": "lib/source_hashes.py", "ptd_client_server.lib.summary": "lib/summary.py", "ptd_client_server.lib.time_sync": "lib/time_sync.py"}}
+client 2023-08-13 13:04:14,765 [INFO] Running workload in ranging mode
+client 2023-08-13 13:04:14,765 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-08-13 13:04:14,783 [INFO] NTP:offset = -0.004 s, delay = 0.016 s 
+client 2023-08-13 13:04:14,783 [INFO] Sending command to the server: 'time'
+client 2023-08-13 13:04:14,785 [INFO] Got response: '1691928254.5485878'
+client 2023-08-13 13:04:14,785 [INFO] The time difference between the client and the server is within range 234.478 ms..236.599 ms
+client 2023-08-13 13:04:14,785 [INFO] Sending command to the server: 'session,2023-08-13_13-04-14,start,ranging'
+client 2023-08-13 13:04:43,536 [INFO] Got response: 'OK'
+client 2023-08-13 13:04:43,536 [INFO] Sending command to the server: 'time'
+client 2023-08-13 13:04:43,540 [INFO] Got response: '1691928283.3032937'
+client 2023-08-13 13:04:43,540 [INFO] The time difference between the client and the server is within range 233.650 ms..237.261 ms
+client 2023-08-13 13:04:43,540 [INFO] Running the workload 'CM_MLPERF_RUN_COUNT=$(cat ${CM_RUN_DIR}/count.txt); echo ${CM_MLPERF_RUN_COUNT}; CM_MLPERF_RUN_COUNT=$((CM_MLPERF_RUN_COUNT+1)); echo ${CM_MLPERF_RUN_COUNT} > ${CM_RUN_DIR}/count.txt && if [ ${CM_MLPERF_RUN_COUNT} -eq "1" ]; then export CM_MLPERF_USER_CONF=${CM_MLPERF_RANGING_USER_CONF}; else export CM_MLPERF_USER_CONF=${CM_MLPERF_TESTING_USER_CONF}; fi && /usr/bin/python3 run.py --backend=deepsparse --scenario=Offline --mlperf_conf "/mount/CM/repos/local/cache/e98684742c3f4b81/inference/mlperf.conf" --user_conf "${CM_MLPERF_USER_CONF}" --quantized --batch_size=384 --model_path=/home/arjun/.cache/sparsezoo/3a4c6b06-2532-4364-8f7d-d6c5668c1477/model.onnx'
+client 2023-08-13 13:32:43,262 [INFO] Sending command to the server: 'time'
+client 2023-08-13 13:32:43,267 [INFO] Got response: '1691929963.2427952'
+client 2023-08-13 13:32:43,268 [INFO] The time difference between the client and the server is within range 18.512 ms..25.237 ms
+client 2023-08-13 13:32:43,268 [INFO] Sending command to the server: 'session,2023-08-13_13-04-14,stop,ranging'
+client 2023-08-13 13:32:53,957 [INFO] Got response: 'OK'
+client 2023-08-13 13:32:53,957 [INFO] Sending command to the server: 'time'
+client 2023-08-13 13:32:53,960 [INFO] Got response: '1691929973.9312842'
+client 2023-08-13 13:32:53,960 [INFO] The time difference between the client and the server is within range 26.644 ms..28.934 ms
+client 2023-08-13 13:32:54,153 [INFO] Copying loadgen logs from '/home/arjun/results_dir/valid_results/orin-reference-cpu-deepsparse-vdefault-default_config/obert-large-pruned95_quant-none-vnni-bert-99/offline/performance/run_1' to '/home/arjun/results_dir/valid_results/orin-reference-cpu-deepsparse-vdefault-default_config/obert-large-pruned95_quant-none-vnni-bert-99/offline/performance/tmp_power/ranging'
+client 2023-08-13 13:32:54,290 [INFO] Running workload in testing mode
+client 2023-08-13 13:32:54,291 [INFO] Synchronizing with the server and with time.google.com...
+client 2023-08-13 13:32:54,320 [INFO] NTP:offset = -0.006 s, delay = 0.013 s 
+client 2023-08-13 13:32:54,320 [INFO] Sending command to the server: 'time'
+client 2023-08-13 13:32:54,324 [INFO] Got response: '1691929974.2954228'
+client 2023-08-13 13:32:54,324 [INFO] The time difference between the client and the server is within range 24.949 ms..29.148 ms
+client 2023-08-13 13:32:54,324 [INFO] Sending command to the server: 'session,2023-08-13_13-04-14,start,testing'
+client 2023-08-13 13:33:07,364 [INFO] Got response: 'OK'
+client 2023-08-13 13:33:07,364 [INFO] Sending command to the server: 'time'
+client 2023-08-13 13:33:07,369 [INFO] Got response: '1691929987.3475397'
+client 2023-08-13 13:33:07,369 [INFO] The time difference between the client and the server is within range 17.430 ms..21.719 ms
+client 2023-08-13 13:33:07,369 [INFO] Running the workload 'CM_MLPERF_RUN_COUNT=$(cat ${CM_RUN_DIR}/count.txt); echo ${CM_MLPERF_RUN_COUNT}; CM_MLPERF_RUN_COUNT=$((CM_MLPERF_RUN_COUNT+1)); echo ${CM_MLPERF_RUN_COUNT} > ${CM_RUN_DIR}/count.txt && if [ ${CM_MLPERF_RUN_COUNT} -eq "1" ]; then export CM_MLPERF_USER_CONF=${CM_MLPERF_RANGING_USER_CONF}; else export CM_MLPERF_USER_CONF=${CM_MLPERF_TESTING_USER_CONF}; fi && /usr/bin/python3 run.py --backend=deepsparse --scenario=Offline --mlperf_conf "/mount/CM/repos/local/cache/e98684742c3f4b81/inference/mlperf.conf" --user_conf "${CM_MLPERF_USER_CONF}" --quantized --batch_size=384 --model_path=/home/arjun/.cache/sparsezoo/3a4c6b06-2532-4364-8f7d-d6c5668c1477/model.onnx'
+client 2023-08-13 15:19:51,666 [INFO] Sending command to the server: 'time'
+client 2023-08-13 15:19:51,672 [INFO] Got response: '1691936391.5908797'
+client 2023-08-13 15:19:51,672 [INFO] The time difference between the client and the server is within range 74.440 ms..81.369 ms
+client 2023-08-13 15:19:51,672 [INFO] Sending command to the server: 'session,2023-08-13_13-04-14,stop,testing'
+client 2023-08-13 15:20:03,085 [INFO] Got response: 'OK'
+client 2023-08-13 15:20:03,085 [INFO] Sending command to the server: 'time'
+client 2023-08-13 15:20:03,087 [INFO] Got response: '1691936403.007202'
+client 2023-08-13 15:20:03,087 [INFO] The time difference between the client and the server is within range 77.948 ms..79.868 ms
+client 2023-08-13 15:20:03,238 [INFO] Copying loadgen logs from '/home/arjun/results_dir/valid_results/orin-reference-cpu-deepsparse-vdefault-default_config/obert-large-pruned95_quant-none-vnni-bert-99/offline/performance/run_1' to '/home/arjun/results_dir/valid_results/orin-reference-cpu-deepsparse-vdefault-default_config/obert-large-pruned95_quant-none-vnni-bert-99/offline/performance/tmp_power/run_1'
+client 2023-08-13 15:20:03,242 [INFO] Done runs

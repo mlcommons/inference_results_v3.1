@@ -1,0 +1,56 @@
+client 2023-08-03 05:19:11,360 [INFO] Sending command to the server: 'mlcommons/power client v3'
+client 2023-08-03 05:19:11,362 [INFO] Got response: 'mlcommons/power server v3'
+client 2023-08-03 05:19:11,362 [INFO] Sending command to the server: 'stop'
+client 2023-08-03 05:19:11,363 [INFO] Got response: 'OK'
+client 2023-08-03 05:19:11,363 [INFO] Synchronizing with the server and with ib-01.dc4-in.nvidia.com...
+client 2023-08-03 05:19:11,599 [INFO] NTP:offset = 0.002 s, delay = 0.228 s 
+client 2023-08-03 05:19:11,599 [INFO] Sending command to the server: 'time'
+client 2023-08-03 05:19:11,600 [INFO] Got response: '1691039951.5994158'
+client 2023-08-03 05:19:11,600 [INFO] The time difference between the client and the server is within range -0.178 ms..0.984 ms
+client 2023-08-03 05:19:11,600 [INFO] Sending command to the server: 'new,,8c3e3172-3dc5-42a9-8dfc-db11bd83217a'
+client 2023-08-03 05:19:11,601 [INFO] Got response: 'OK 2023-08-02_22-19-11,af63c492-0a05-48c0-b1d7-7af94beb375c'
+client 2023-08-03 05:19:11,601 [INFO] Session id is '2023-08-02_22-19-11'
+client 2023-08-03 05:19:11,601 [INFO] Sources: {"sources": {"__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "client.py": "33ca4f26368777ac06e01f9567b714a4b8063886", "lib/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/client.py": "ac2aa093c8e8bbc9569b9e2a3471bc64e58a2258", "lib/common.py": "611d8b29633d331eb19c9455ea3b5fa3284ed6df", "lib/external/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "lib/external/ntplib.py": "4da8f970656505a40483206ef2b5d3dd5e81711d", "lib/server.py": "c7af63c31bb2fbedea4345f571f6e3507d268ada", "lib/source_hashes.py": "60a2e02193209e8d392803326208d5466342da18", "lib/summary.py": "aa92f0a3f975eecd44d3c0cd0236342ccc9f941d", "lib/time_sync.py": "122eba67a9abc85635223e054def53be1367ade2", "server.py": "c3f90f2f7eeb4db30727556d0c815ebc89b3d28b", "tests/unit/__init__.py": "da39a3ee5e6b4b0d3255bfef95601890afd80709", "tests/unit/test_server.py": "948c1995d4008bc2aa6c4046a34ffa3858d6d671", "tests/unit/test_source_hashes.py": "00468a2907583c593e6574a1f6b404e4651c221a"}, "modules": {"ptd_client_server.lib.client": "lib/client.py", "ptd_client_server.lib.common": "lib/common.py", "ptd_client_server.lib.external.ntplib": "lib/external/ntplib.py", "ptd_client_server.lib.source_hashes": "lib/source_hashes.py", "ptd_client_server.lib.summary": "lib/summary.py", "ptd_client_server.lib.time_sync": "lib/time_sync.py"}}
+client 2023-08-03 05:19:11,605 [INFO] Running workload in ranging mode
+client 2023-08-03 05:19:11,605 [INFO] Synchronizing with the server and with ib-01.dc4-in.nvidia.com...
+client 2023-08-03 05:19:11,843 [INFO] NTP:offset = 0.004 s, delay = 0.232 s 
+client 2023-08-03 05:19:11,843 [INFO] Sending command to the server: 'time'
+client 2023-08-03 05:19:11,844 [INFO] Got response: '1691039951.8436916'
+client 2023-08-03 05:19:11,844 [INFO] The time difference between the client and the server is within range -0.150 ms..0.985 ms
+client 2023-08-03 05:19:11,844 [INFO] Sending command to the server: 'session,2023-08-02_22-19-11,start,ranging'
+client 2023-08-03 05:19:51,763 [INFO] Got response: 'OK'
+client 2023-08-03 05:19:51,763 [INFO] Sending command to the server: 'time'
+client 2023-08-03 05:19:51,764 [INFO] Got response: '1691039991.7636824'
+client 2023-08-03 05:19:51,764 [INFO] The time difference between the client and the server is within range -0.169 ms..1.079 ms
+client 2023-08-03 05:19:51,764 [INFO] Running the workload 'LOG_DIR=/work/build/power_logs_temp python3.8 -m code.main --benchmarks=retinanet --scenarios=Server --test_mode=PerformanceOnly --config_ver=maxq --action="run_harness" \\\n\t\t2>&1 | tee -a /work/build/power_logs/2023.08.03-05.18.22/stdout.txt \\\n\t\t&& if [ ! -d /work/build/power_logs/2023.08.03-05.18.22/ranging_tmp ]; \\\n\t\t\tthen mkdir /work/build/power_logs/2023.08.03-05.18.22/ranging_tmp \\\n\t\t\t\t&& mv /work/build/power_logs_temp/* /work/build/power_logs/2023.08.03-05.18.22/ranging_tmp/ \\\n\t\t\t\t&& cp -v /work/build/power_logs/2023.08.03-05.18.22/ranging_tmp/*/*/*/mlperf_log_detail.txt /work/build/power_logs_temp/ \\\n\t\t\t\t&& cp -v /work/build/power_logs/2023.08.03-05.18.22/ranging_tmp/*/*/*/mlperf_log_summary.txt /work/build/power_logs_temp/; \\\n\t\t\telse mkdir /work/build/power_logs/2023.08.03-05.18.22/testing_tmp \\\n\t\t\t\t&& mv /work/build/power_logs_temp/* /work/build/power_logs/2023.08.03-05.18.22/testing_tmp/ \\\n\t\t\t\t&& cp -v /work/build/power_logs/2023.08.03-05.18.22/testing_tmp/*/*/*/mlperf_log_detail.txt /work/build/power_logs_temp/ \\\n\t\t\t\t&& cp -v /work/build/power_logs/2023.08.03-05.18.22/testing_tmp/*/*/*/mlperf_log_summary.txt /work/build/power_logs_temp/; fi'
+client 2023-08-03 05:30:27,076 [INFO] Sending command to the server: 'time'
+client 2023-08-03 05:30:27,078 [INFO] Got response: '1691040627.0773764'
+client 2023-08-03 05:30:27,078 [INFO] The time difference between the client and the server is within range -0.484 ms..1.131 ms
+client 2023-08-03 05:30:27,078 [INFO] Sending command to the server: 'session,2023-08-02_22-19-11,stop,ranging'
+client 2023-08-03 05:30:37,839 [INFO] Got response: 'OK'
+client 2023-08-03 05:30:37,840 [INFO] Sending command to the server: 'time'
+client 2023-08-03 05:30:37,841 [INFO] Got response: '1691040637.8401735'
+client 2023-08-03 05:30:37,841 [INFO] The time difference between the client and the server is within range -0.162 ms..0.903 ms
+client 2023-08-03 05:30:37,855 [INFO] Copying loadgen logs from '/work/build/power_logs_temp' to '/work/build/power_logs/2023.08.03-05.18.22/2023-08-02_22-19-11/ranging'
+client 2023-08-03 05:30:37,874 [INFO] Running workload in testing mode
+client 2023-08-03 05:30:37,874 [INFO] Synchronizing with the server and with ib-01.dc4-in.nvidia.com...
+client 2023-08-03 05:30:38,108 [INFO] NTP:offset = 0.004 s, delay = 0.228 s 
+client 2023-08-03 05:30:38,108 [INFO] Sending command to the server: 'time'
+client 2023-08-03 05:30:38,109 [INFO] Got response: '1691040638.1084611'
+client 2023-08-03 05:30:38,109 [INFO] The time difference between the client and the server is within range -0.297 ms..1.077 ms
+client 2023-08-03 05:30:38,109 [INFO] Sending command to the server: 'session,2023-08-02_22-19-11,start,testing'
+client 2023-08-03 05:30:59,735 [INFO] Got response: 'OK'
+client 2023-08-03 05:30:59,735 [INFO] Sending command to the server: 'time'
+client 2023-08-03 05:30:59,736 [INFO] Got response: '1691040659.735867'
+client 2023-08-03 05:30:59,736 [INFO] The time difference between the client and the server is within range -0.182 ms..0.857 ms
+client 2023-08-03 05:30:59,736 [INFO] Running the workload 'LOG_DIR=/work/build/power_logs_temp python3.8 -m code.main --benchmarks=retinanet --scenarios=Server --test_mode=PerformanceOnly --config_ver=maxq --action="run_harness" \\\n\t\t2>&1 | tee -a /work/build/power_logs/2023.08.03-05.18.22/stdout.txt \\\n\t\t&& if [ ! -d /work/build/power_logs/2023.08.03-05.18.22/ranging_tmp ]; \\\n\t\t\tthen mkdir /work/build/power_logs/2023.08.03-05.18.22/ranging_tmp \\\n\t\t\t\t&& mv /work/build/power_logs_temp/* /work/build/power_logs/2023.08.03-05.18.22/ranging_tmp/ \\\n\t\t\t\t&& cp -v /work/build/power_logs/2023.08.03-05.18.22/ranging_tmp/*/*/*/mlperf_log_detail.txt /work/build/power_logs_temp/ \\\n\t\t\t\t&& cp -v /work/build/power_logs/2023.08.03-05.18.22/ranging_tmp/*/*/*/mlperf_log_summary.txt /work/build/power_logs_temp/; \\\n\t\t\telse mkdir /work/build/power_logs/2023.08.03-05.18.22/testing_tmp \\\n\t\t\t\t&& mv /work/build/power_logs_temp/* /work/build/power_logs/2023.08.03-05.18.22/testing_tmp/ \\\n\t\t\t\t&& cp -v /work/build/power_logs/2023.08.03-05.18.22/testing_tmp/*/*/*/mlperf_log_detail.txt /work/build/power_logs_temp/ \\\n\t\t\t\t&& cp -v /work/build/power_logs/2023.08.03-05.18.22/testing_tmp/*/*/*/mlperf_log_summary.txt /work/build/power_logs_temp/; fi'
+client 2023-08-03 05:41:35,135 [INFO] Sending command to the server: 'time'
+client 2023-08-03 05:41:35,137 [INFO] Got response: '1691041295.137193'
+client 2023-08-03 05:41:35,137 [INFO] The time difference between the client and the server is within range -1.443 ms..0.196 ms
+client 2023-08-03 05:41:35,137 [INFO] Sending command to the server: 'session,2023-08-02_22-19-11,stop,testing'
+client 2023-08-03 05:41:45,782 [INFO] Got response: 'OK'
+client 2023-08-03 05:41:45,782 [INFO] Sending command to the server: 'time'
+client 2023-08-03 05:41:45,783 [INFO] Got response: '1691041305.7837965'
+client 2023-08-03 05:41:45,783 [INFO] The time difference between the client and the server is within range -0.888 ms..-0.055 ms
+client 2023-08-03 05:41:45,793 [INFO] Copying loadgen logs from '/work/build/power_logs_temp' to '/work/build/power_logs/2023.08.03-05.18.22/2023-08-02_22-19-11/run_1'
+client 2023-08-03 05:41:45,811 [INFO] Done runs
