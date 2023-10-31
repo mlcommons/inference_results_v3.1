@@ -38,7 +38,7 @@ explaining why [MLCommons](https://mlcommons.org) is developing an open-source, 
 and non-intrusive [Collective Mind automation language (CM)](https://github.com/mlcommons/ck)
 and [Collective Knowledge Playground (CK)](https://access.cknowledge.org/playground/?action=experiments) 
 to make it easier to run, reproduce, optimize and compare MLPerf inference benchmarks 
-accross diverse software, hardware, models and data sets from different vendor.
+across diverse software, hardware, models and data sets from different vendors.
 
 Note that this project is under heavy development by the [MLCommons Task Force on Automation and Reproducibility](../taskforce.md),
 [cTuning.org](https://www.linkedin.com/company/ctuning-foundation) and [cKnowledge.org](https://www.linkedin.com/company/cknowledge)
@@ -52,7 +52,7 @@ and participate in our [reproducibility and optimization challenges](https://acc
 
 ## Install CM automation language
 
-Install the [MLCommons CM automation language](https://doi.org/10.5281/zenodo.8105339) as described in this [guide](../../installation.md). 
+Install the [MLCommons CM automation language](https://doi.org/10.5281/zenodo.8105339) as described in this [guide](https://github.com/mlcommons/ck/blob/master/docs/installation.md). 
 It is a small Python library with `cm` and `cmr` command line front-ends and minimal dependencies including Python 3+, Git and wget.
 
 If you encounter problems, please report them at [GitHub](https://github.com/mlcommons/ck/issues).
@@ -287,20 +287,6 @@ cmr "gui _graph"
 ```
 
 *This is ongoing development.*
-
-
-
-## Extend and customize benchmarks
-
-TBD. In the meantime, you can get help from the community via our [Discord server](https://discord.gg/JjWNWXKxwT).
-
-### Add new MLPerf benchmark implementation
-
-### Add new hardware backend
-
-### Add new model
-
-### Add new data set
 
 
 ## Participate in reproducibility and optimization challenges
