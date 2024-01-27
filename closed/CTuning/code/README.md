@@ -1,37 +1,9 @@
-[ [Back to MLPerf benchmarks index](../README.md) ]
-
-<details>
-<summary>Click here to see the table of contents.</summary>
-
-* [Run MLPerf inference benchmarks out-of-the-box](#run-mlperf-inference-benchmarks-out-of-the-box)
-  * [Install CM automation language](#install-cm-automation-language)
-  * [Install repository with CM automations](#install-repository-with-cm-automations)
-  * [Setup virtual environment](#setup-virtual-environment)
-  * [Test Docker](#test-docker)
-  * [Prepare hardware](#prepare-hardware)
-    * [CPU](#cpu)
-    * [CUDA GPU](#cuda-gpu)
-    * [Other backends](#other-backends)
-  * [Run benchmarks and submit results](#run-benchmarks-and-submit-results)
-    * [Measure power](#measure-power)
-  * [Debug benchmarks](#debug-benchmarks)
-  * [Update CM language and scripts](#update-cm-language-and-scripts)
-  * [Optimize benchmarks](#optimize-benchmarks)
-  * [Visualize and compare results](#visualize-and-compare-results)
-  * [Extend and customize benchmarks](#extend-and-customize-benchmarks)
-    * [Add new MLPerf benchmark implementation](#add-new-mlperf-benchmark-implementation)
-    * [Add new hardware backend](#add-new-hardware-backend)
-    * [Add new model](#add-new-model)
-    * [Add new data set](#add-new-data-set)
-  * [Participate in reproducibility and optimization challenges](#participate-in-reproducibility-and-optimization-challenges)
-
-</details>
 
 
 # Run MLPerf inference benchmarks out-of-the-box
 
 This documentation will help you run, reproduce and compare [MLPerf inference benchmarks](https://arxiv.org/abs/1911.02549) 
-out-of-the-box using a unified interface being developed by the [MLCommons Task Force on Automation and Reproducibility](../../taskforce.md).
+out-of-the-box using the Collective Mind unified interface.
 
 Please check [MLPerf inference submitter orientation slides](https://doi.org/10.5281/zenodo.8144274)
 explaining why [MLCommons](https://mlcommons.org) is developing an open-source, technology-agnostic 
@@ -40,7 +12,7 @@ and [Collective Knowledge Playground (CK)](https://access.cknowledge.org/playgro
 to make it easier to run, reproduce, optimize and compare MLPerf inference benchmarks 
 across diverse software, hardware, models and data sets from different vendors.
 
-Note that this project is under heavy development by the [MLCommons Task Force on Automation and Reproducibility](../taskforce.md),
+Note that this project is under heavy development by the [MLCommons Task Force on Automation and Reproducibility](https://github.com/mlcommons/ck/blob/master/docs/taskforce.md),
 [cTuning.org](https://www.linkedin.com/company/ctuning-foundation) and [cKnowledge.org](https://www.linkedin.com/company/cknowledge)
 led by [Grigori Fursin](https://cKnowledge.org/gfursin) and [Arjun Suresh](https://www.linkedin.com/in/arjunsuresh).
 You can learn more about our plans and long-term vision from our [ACM REP keynote (June 2023)](https://doi.org/10.5281/zenodo.8105339).
@@ -66,18 +38,10 @@ to enable portable, modular, and technology-agnostic benchmarks and applications
 that can automatically run with any software, hardware, models and data sets.
 
 ```bash
-cm pull repo mlcommons@ck
+cm pull repo mlcommons@ck --checkout=v3.1
 ```
 
-You can run it again at any time to pick up the latest updates.
 
-If you want to extend existing automations, contribute the new ones or register in our 
-[reproducibility and optimization challenges for AI//ML systems](https://access.cknowledge.org/playground/?action=challenges),
-we suggest you to create a fork of this repository and use it instead of the main one. Just do not forget to delete the original repository from the CM:
-```bash
-cm rm repo mlcommons@ck --all
-cm pull repo --url={URL of the mlcommons@ck fork}
-```
 
 Note that CM will store all such repositories and downloaded/installed data sets, models and tools
 in your `$HOME/CM` directory. 
@@ -118,22 +82,6 @@ export CM_SCRIPT_EXTRA_CMD="--adr.python.name=mlperf2"
 
 
 
-## Test Docker
-
-If you have Docker installed on your system, you can test it and run some CM scripts as follows:
-```bash
-cm docker script --tags=detect,os -j
-```
-
-
-## Prepare cloud instances
-
-If you want to run MLPerf in multiple cloud instances, please follow these guides to set them up:
-
-* [AWS](../setup/setup-aws-instance.md)
-* [GCP](../setup/setup-gcp-instance.md)
-
-
 ## Prepare hardware
 
 Read this section if you want to run MLPerf benchmarks in a native environment, i.e. without containers.
@@ -149,15 +97,6 @@ If you plan to use CUDA in your native environment, please follow [this guide](.
 ### Nvidia Jetson AGX Orin
 
 Follow [this guide](../setup/setup-nvidia-jetson-orin.md).
-
-### Other backends
-
-We work with the community to add more hardware backends (Google TPU, Amazon Inferentia, Qualcomm AI100, etc) 
-to MLPerf benchmarks via our [open challenges for AI//ML systems](https://access.cknowledge.org/playground/?action=challenges),
-Please get in touch with us via [public Discord server](https://discord.gg/JjWNWXKxwT) 
-if you are interested to participate, collaborate and contribute to this community project!
-
-
 
 
 
@@ -273,26 +212,8 @@ Please check this [documentation](../../../cm-mlops/automation/experiment/README
 *This is ongoing development.*
 
 
-## Visualize and compare results
-
-You can pull all past MLPerf results in the CM format, import your current experiments under preparation and visualize results 
-with derived metrics on your system using the Collective Knowledge Playground as follows:
-
-```bash
-cm pull repo mlcommons@ck_mlperf_results
-cmr "get git repo _repo.https://github.com/ctuning/mlperf_inference_submissions_v3.1" \
-    --env.CM_GIT_CHECKOUT=main \
-    --extra_cache_tags=mlperf-inference-results,community,version-3.1
-cmr "gui _graph"
-```
-
-*This is ongoing development.*
 
 
-## Participate in reproducibility and optimization challenges
-
-Please help this community project by participating in our 
-[reproducibility and optimization challenges for MLPerf](https://access.cknowledge.org/playground/?action=challenges)!
 
 
 ## Questions? Suggestions?
