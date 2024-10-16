@@ -1,0 +1,207 @@
+commit 4231004f7909022944fbb7e9ac8dabe6abe2ab6e
+Author: badhri-intel <badhri.narayanan.suresh@intel.com>
+Date:   Wed Aug 2 10:19:31 2023 -0700
+
+    GPTJ BF16 TPP code for Offline Mode
+
+diff --git a/closed/Intel/code/gpt-j/pytorch-cpu/README.md b/closed/Intel/code/gpt-j/pytorch-cpu/README.md
+index d086e3b..3bd41bc 100644
+--- a/closed/Intel/code/gpt-j/pytorch-cpu/README.md
++++ b/closed/Intel/code/gpt-j/pytorch-cpu/README.md
+@@ -49,12 +49,33 @@ source setup_env.sh
+ bash run_quantization.sh
+ ```
+ 
+-### Run Benchmarks
++### Run Benchmarks with Bfloat16
+ + Offline (Performance)
+ ```
+-bash run_offline.sh
++bash run_offline_bf16.sh
++```
++
+++ Offline (Accuracy)
++```
++bash run_offline_accuracy_bf16.sh
++```
++
+++ Server (Performance)
++```
++bash run_server_bf16.sh
+ ```
+ 
+++ Server (Accuracy)
++```
++bash run_server_accuracy_bf16.sh
++```
++
++
++### Run Benchmarks with Int8
+++ Offline (Performance)
++```
++bash run_offline.sh
++```
+ 
+ + Offline (Accuracy)
+ ```
+diff --git a/closed/Intel/code/gpt-j/pytorch-cpu/backend.py b/closed/Intel/code/gpt-j/pytorch-cpu/backend.py
+index 1854cec..9f674af 100644
+--- a/closed/Intel/code/gpt-j/pytorch-cpu/backend.py
++++ b/closed/Intel/code/gpt-j/pytorch-cpu/backend.py
+@@ -11,6 +11,8 @@ import transformers
+ import intel_extension_for_pytorch as ipex
+ from typing import Optional, Tuple, Union
+ 
++USE_TPP=int(os.environ.get("USE_TPP", "0")) == 1
++print(f'Use TPP: {USE_TPP}')
+ 
+ torch._C._jit_set_texpr_fuser_enabled(False)
+ 
+@@ -73,11 +75,18 @@ class Backend(object):
+             setattr(self.model, "trace_graph", self.int8_model)
+ 
+         if self.precision=="bf16":
+-            self.model = ipex.optimize(self.model,
+-                    dtype=torch.bfloat16,
+-                    inplace=True,
+-                    concat_linear=False
+-                    )
++            if USE_TPP == True:
++                from tpp_pytorch_extension.llm.fused_gptj_infer import OptimizeModelForGPTJ
++                import tpp_pytorch_extension as tpx
++                OptimizeModelForGPTJ(self.model, dtype=torch.bfloat16, device='cpu')
++                self.model = tpx.llm.llm_common.jit_trace_model(self.model, self.tokenizer, self.generate_kwargs["num_beams"])
++            else:
++                self.model = ipex.optimize(self.model,
++                        dtype=torch.bfloat16,
++                        inplace=True,
++                        concat_linear=False
++                        )
++
+     def predict(self, input_batch, attention_mask=None):
+         """ Runs inference on 'input_batch' """
+         with torch.inference_mode(), torch.no_grad(), torch.cpu.amp.autocast(enabled=self.precision=="bf16" or self.precision=="int8_bf16_mixed", dtype=torch.bfloat16):
+diff --git a/closed/Intel/code/gpt-j/pytorch-cpu/prepare_env.sh b/closed/Intel/code/gpt-j/pytorch-cpu/prepare_env.sh
+index e5e1a7f..372375d 100644
+--- a/closed/Intel/code/gpt-j/pytorch-cpu/prepare_env.sh
++++ b/closed/Intel/code/gpt-j/pytorch-cpu/prepare_env.sh
+@@ -80,6 +80,14 @@ unset LLVM_DIR
+ unset USE_LLVM
+ python -m pip install --force-reinstall dist/*.whl
+ 
++# =========== Install TPP Pytorch Extension ==========
++cd ${WORKDIR}
++git clone --branch mlperf_infer_31 https://github.com/libxsmm/tpp-pytorch-extension/ tpp-pytorch-extension
++cd tpp-pytorch-extension
++git submodule update --init
++conda install ninja
++python setup.py install
++
+ # ============ Install transformers =========
+ 
+ pip install transformers==4.28.1
+diff --git a/closed/Intel/code/gpt-j/pytorch-cpu/run_offline_accuracy_bf16.sh b/closed/Intel/code/gpt-j/pytorch-cpu/run_offline_accuracy_bf16.sh
+new file mode 100755
+index 0000000..89b6863
+--- /dev/null
++++ b/closed/Intel/code/gpt-j/pytorch-cpu/run_offline_accuracy_bf16.sh
+@@ -0,0 +1,52 @@
++#!/bin/bash
++
++export KMP_BLOCKTIME=1
++export KMP_AFFINITY=granularity=fine,compact,1,0
++export LD_PRELOAD=${LD_PRELOAD}:${CONDA_PREFIX}/lib/libiomp5.so
++export LD_PRELOAD=${LD_PRELOAD}:${CONDA_PREFIX}/lib/libtcmalloc.so
++
++export num_physical_cores=`lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l`
++num_numa=$(numactl --hardware|grep available|awk -F' ' '{ print $2 }')
++
++export USE_TPP=1
++
++python ../../user_config.py
++USER_CONF=user.conf
++
++NUM_PROC=2 #$num_numa
++CPUS_PER_PROC=56 #$((num_physical_cores/num_numa))
++WORKERS_PER_PROC=1
++TOTAL_SAMPLE_COUNT=13368
++BATCH_SIZE=16
++TIMESTAMP=$(date +%m-%d-%H-%M)
++HOSTNAME=$(hostname)
++OUTPUT_DIR=offline-accuracy-output-${HOSTNAME}-batch-${BATCH_SIZE}-procs-${NUM_PROC}-ins-per-proc-${WORKERS_PER_PROC}-${TIMESTAMP}
++
++
++python runner.py --workload-name gptj \
++	--scenario Offline \
++	--mode Accuracy \
++	--num-proc ${NUM_PROC} \
++	--cpus-per-proc ${CPUS_PER_PROC} \
++	--model-checkpoint-path ${CHECKPOINT_DIR} \
++	--dataset-path ${VALIDATION_DATA_JSON} \
++	--batch-size ${BATCH_SIZE} \
++	--mlperf-conf mlperf.conf \
++	--user-conf user.conf \
++	--precision bf16 \
++	--workers-per-proc ${WORKERS_PER_PROC} \
++	--total-sample-count ${TOTAL_SAMPLE_COUNT} \
++	--output-dir ${OUTPUT_DIR} \
++	2>&1 | tee ${OUTPUT_DIR}.log
++
++
++if [ -e ${OUTPUT_DIR}/mlperf_log_accuracy.json ]; then
++	echo " ==================================="
++	echo "         Evaluating Accuracy        "
++	echo " ==================================="
++
++	python evaluation.py --mlperf-accuracy-file ${OUTPUT_DIR}/mlperf_log_accuracy.json \
++		--dataset-file ${VALIDATION_DATA_JSON} \
++		--model-name-or-path ${CHECKPOINT_DIR} 2>&1 | tee -a accuracy-offline-${TIMESTAMP}.txt ${OUTPUT_DIR}.log
++fi
++
+diff --git a/closed/Intel/code/gpt-j/pytorch-cpu/run_offline_bf16.sh b/closed/Intel/code/gpt-j/pytorch-cpu/run_offline_bf16.sh
+new file mode 100755
+index 0000000..a0515b4
+--- /dev/null
++++ b/closed/Intel/code/gpt-j/pytorch-cpu/run_offline_bf16.sh
+@@ -0,0 +1,41 @@
++#!/bin/bash
++
++export KMP_BLOCKTIME=1
++export KMP_AFFINITY=granularity=fine,compact,1,0
++export LD_PRELOAD=${LD_PRELOAD}:${CONDA_PREFIX}/lib/libiomp5.so
++export LD_PRELOAD=${LD_PRELOAD}:${CONDA_PREFIX}/lib/libtcmalloc.so
++
++export num_physical_cores=`lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l`
++num_numa=$(numactl --hardware|grep available|awk -F' ' '{ print $2 }')
++
++export USE_TPP=1
++
++python ../../user_config.py
++USER_CONF=user.conf
++
++NUM_PROC=2 #$num_numa
++CPUS_PER_PROC=56 #$((num_physical_cores/num_numa))
++WORKERS_PER_PROC=1
++TOTAL_SAMPLE_COUNT=13368
++BATCH_SIZE=16
++TIMESTAMP=$(date +%m-%d-%H-%M)
++HOSTNAME=$(hostname)
++OUTPUT_DIR=offline-output-${HOSTNAME}-batch-${BATCH_SIZE}-procs-${NUM_PROC}-ins-per-proc-${WORKERS_PER_PROC}-${TIMESTAMP}
++
++python runner.py --workload-name gptj \
++	--scenario Offline \
++	--mode Performance \
++	--num-proc ${NUM_PROC} \
++	--cpus-per-proc ${CPUS_PER_PROC} \
++	--model-checkpoint-path ${CHECKPOINT_DIR} \
++	--dataset-path ${VALIDATION_DATA_JSON} \
++	--batch-size ${BATCH_SIZE} \
++	--mlperf-conf mlperf.conf \
++	--user-conf user.conf \
++	--precision bf16 \
++	--warmup \
++	--workers-per-proc ${WORKERS_PER_PROC} \
++	--total-sample-count ${TOTAL_SAMPLE_COUNT} \
++	--output-dir ${OUTPUT_DIR} \
++	2>&1 | tee ${OUTPUT_DIR}.log
++

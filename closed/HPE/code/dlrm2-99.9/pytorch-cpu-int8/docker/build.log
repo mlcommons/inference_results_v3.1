@@ -1,0 +1,143 @@
+Building DLRM2-99.9 workflow container
+[1/4] STEP 1/5: FROM rockylinux:8.6 AS dev-base
+[1/4] STEP 2/5: ARG GCC_MAJOR_VERSION
+--> Using cache 4ce1b3c7437a9cd935dca68d1c4619881eedbee0519037f2f56f38d5c04fc086
+--> 4ce1b3c7437
+[1/4] STEP 3/5: RUN --mount=type=cache,id=yum-dev,target=/var/cache/yum     DEBIAN_FRONTEND=noninteractive dnf install -y     ca-certificates     git     curl     vim     numactl     cmake     sudo     wget     gcc-toolset-${GCC_MAJOR_VERSION}-gcc     gcc-toolset-${GCC_MAJOR_VERSION}-gcc-c++     && rm -rf /var/lib/yum/lists
+--> Using cache d11353d752748df014a05d98be78ac1606a6b3b74af22a08ba1261fc674b3ccf
+--> d11353d7527
+[1/4] STEP 4/5: RUN echo "source /opt/rh/gcc-toolset-${GCC_MAJOR_VERSION}/enable" >> /root/.bashrc
+--> Using cache 78741e8cdab2e1a07e0a0b2e4060ef0858b3f131e680c3704adc78c1ef7985f4
+--> 78741e8cdab
+[1/4] STEP 5/5: ENV PATH /opt/conda/bin:$PATH
+--> Using cache af7c6c8bb643629e33f580cdd372ca868f3dec331bd422a2b2c847d797221391
+--> af7c6c8bb64
+[4/4] STEP 1/12: FROM af7c6c8bb643629e33f580cdd372ca868f3dec331bd422a2b2c847d797221391 AS mp
+[4/4] STEP 2/12: ARG GCC_MAJOR_VERSION
+--> Using cache 670f78c8fc6687b7f3dcd037cfcae230f2d02b65fda62b8687d7c79b54cc5d77
+--> 670f78c8fc6
+[4/4] STEP 3/12: ARG BENCHMARK_NAME
+--> Using cache 2d20d8cdf845f39fc0319deed23f89194433a7521c7677179164486753b97ec4
+--> 2d20d8cdf84
+[4/4] STEP 4/12: ARG IMPL_ID
+--> Using cache 83bba393686605544278c36b44fbbb80b902767277116d322e679a7c3705eca7
+--> 83bba393686
+[4/4] STEP 5/12: COPY --from=build /opt/conda /opt/conda
+[3/4] STEP 1/9: FROM af7c6c8bb643629e33f580cdd372ca868f3dec331bd422a2b2c847d797221391 AS build
+[3/4] STEP 2/9: ARG GCC_MAJOR_VERSION
+--> Using cache 670f78c8fc6687b7f3dcd037cfcae230f2d02b65fda62b8687d7c79b54cc5d77
+--> 670f78c8fc6
+[3/4] STEP 3/9: ARG IPEX_BRANCH
+--> Using cache 8a1bf66b05d2521f42f84fcd774d70d0cac1811ecdc00f008383ca5258512db6
+--> 8a1bf66b05d
+[3/4] STEP 4/9: ARG BENCHMARK_NAME
+--> Using cache b92dea72d262f36cb8217beccf6aa1a4fc0a0e1f7df0eb12b9987f05e2cf772e
+--> b92dea72d26
+[3/4] STEP 5/9: ARG IMPL_ID
+--> Using cache 1114baaabee34a086166d47d76e5d3b62e92a7dd1039430e7156b197b16ffc9e
+--> 1114baaabee
+[3/4] STEP 6/9: COPY --from=conda /opt/conda /opt/conda
+[2/4] STEP 1/5: FROM af7c6c8bb643629e33f580cdd372ca868f3dec331bd422a2b2c847d797221391 AS conda
+[2/4] STEP 2/5: ARG PYTHON_VERSION
+--> Using cache bf07286d5fd36cf98475a280b7727fac3f2d5e13e6fdd7590f29d0524608583e
+--> bf07286d5fd
+[2/4] STEP 3/5: ARG PYTORCH_WHL
+--> Using cache c6f73d968421f4c37242152686d6628843eb6b2d1d132eef6a421a825894fc5e
+--> c6f73d96842
+[2/4] STEP 4/5: RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh &&     chmod +x ~/miniconda.sh &&     ~/miniconda.sh -b -p /opt/conda &&     rm ~/miniconda.sh &&     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} &&     /opt/conda/bin/conda install -c conda-forge -y                                     cmake==3.26.4                                     gperftools==2.10 &&     /opt/conda/bin/conda install -y mkl==2023.1.0                                     mkl-include                                     numpy==1.25                                     ninja==1.10.2                                     pyyaml==6.0                                     setuptools==68.0.0                                     cffi==1.15.1                                     typing_extensions==4.7.1                                     future==0.18.3                                     six==1.16.0                                     requests==2.31.0                                     dataclasses==0.8                                     psutil==5.9.0                                     --no-update-deps &&     /opt/conda/bin/conda clean -ya
+--> Using cache f9a57c83ad65606f3fbfd394928d1b230642cc0cbc9fdf20249a1b8165f88c96
+--> f9a57c83ad6
+[2/4] STEP 5/5: RUN pip install -e git+https://github.com/mlperf/logging@3.0.0-rc2#egg=mlperf-logging &&     pip install absl-py==1.4.0                 tqdm==4.65.0                 onnx==1.14.0                 lark-parser==0.12.0                 hypothesis==6.82.0                 ${PYTORCH_WHL}                 pyre-extensions==0.0.30                 scikit-learn==1.3.0
+--> Using cache 51e4ab918964a180e5f1339f0c710feacb780e2f4d1e5ac46ebbfd1469d5e15b
+--> 51e4ab91896
+--> Using cache 6793d06337df8831d82871535564f4c9dff070678469a9aea2003a4b44eabf58
+--> 6793d06337d
+[3/4] STEP 7/9: COPY ./code/${BENCHMARK_NAME}/${IMPL_ID}/ipex.patch ipex.patch
+--> Using cache 956f3a2420987184523d00172254273904ba5d19941a0748c916e5bd9450fed0
+--> 956f3a24209
+[3/4] STEP 8/9: COPY ./code/${BENCHMARK_NAME}/${IMPL_ID}/onednngraph.patch onednngraph.patch
+--> Using cache f836306104d539082f2b7857fc31de084c30331c72ce89f3fe4f8fff79833032
+--> f836306104d
+[3/4] STEP 9/9: RUN --mount=type=cache,target=/opt/ccache     source /opt/rh/gcc-toolset-${GCC_MAJOR_VERSION}/enable &&     export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"} &&     git clone -b ${IPEX_BRANCH} https://github.com/intel/intel-extension-for-pytorch.git intel-extension-for-pytorch &&     cd intel-extension-for-pytorch &&     git apply ../ipex.patch &&     git submodule sync && git submodule update --init --recursive &&     cd third_party/libxsmm && git checkout c21bc5ddb4 && cd ../../ &&     cd third_party/ideep && rm -rf mkl-dnn && git checkout b5eadff696 &&     git submodule sync && git submodule update --init --recursive &&     cd mkl-dnn/ && git apply -p1 ../../../../onednngraph.patch && cd ../../../ &&     python setup.py install
+--> Using cache 3cfe573c83989c0a5feefa39e5ab170516ab6fd121da36b22e96a184ce42ad8d
+--> 3cfe573c839
+--> Using cache b64732a67b3a68e5723d5d6260c978da56161872b1959b48e9f4ba6f05dd4080
+--> b64732a67b3
+[4/4] STEP 6/12: WORKDIR /opt/workdir
+--> Using cache 18dec04d04bbdfca053edc92f273bf7f1b702dc20dec2432936c57993c9f2512
+--> 18dec04d04b
+[4/4] STEP 7/12: COPY ./code/${BENCHMARK_NAME}/${IMPL_ID} code/${BENCHMARK_NAME}/${IMPL_ID}
+--> dac16cd471b
+[4/4] STEP 8/12: COPY ./code/run_clean.sh code/run_clean.sh
+--> aae54a15ef3
+[4/4] STEP 9/12: COPY ./code/user_config.py code/user_config.py
+--> 15eba6624f6
+[4/4] STEP 10/12: RUN source /opt/rh/gcc-toolset-${GCC_MAJOR_VERSION}/enable &&     git clone --recurse-submodules https://github.com/mlcommons/inference.git inference &&     cd inference &&     git submodule update --init --recursive && cd loadgen &&     CFLAGS="-std=c++14" python setup.py install &&     cd .. && cp ./mlperf.conf /opt/workdir/code/${BENCHMARK_NAME}/${IMPL_ID}/.
+Submodule path 'language/bert/DeepLearningExamples': checked out 'b03375bd6c2c5233130e61a3be49e26d1a20ac7c'
+Submodule path 'language/bert/DeepLearningExamples/PyTorch/SpeechRecognition/Jasper/external/tensorrt-inference-server': checked out '71f0771cb8cb2a2eb1c6a9433f9a56dd1f206c96'
+Submodule path 'language/bert/DeepLearningExamples/PyTorch/Translation/Transformer/cutlass': checked out 'ed2ed4d667ce95e1371bd62db32b6a114e774336'
+Submodule path 'language/bert/DeepLearningExamples/PyTorch/Translation/Transformer/cutlass/tools/external/googletest': checked out '9077ec7efe5b652468ab051e93c67589d5cb8f85'
+Submodule path 'third_party/pybind': checked out '25abf7efba0b2990f5a6dfb0a31bc65c0f2f4d17'
+Submodule path 'third_party/pybind/tools/clang': checked out '6a00cbc4a9b8e68b71caf7f774b3f9c753ae84d5'
+Submodule path 'vision/medical_imaging/3d-unet-brats19/nnUnet': checked out 'b38c69b345b2f60cd0d053039669e8f988b0c0af'
+running install
+running bdist_egg
+running egg_info
+creating mlperf_loadgen.egg-info
+writing mlperf_loadgen.egg-info/PKG-INFO
+writing dependency_links to mlperf_loadgen.egg-info/dependency_links.txt
+writing top-level names to mlperf_loadgen.egg-info/top_level.txt
+writing manifest file 'mlperf_loadgen.egg-info/SOURCES.txt'
+reading manifest file 'mlperf_loadgen.egg-info/SOURCES.txt'
+writing manifest file 'mlperf_loadgen.egg-info/SOURCES.txt'
+installing library code to build/bdist.linux-x86_64/egg
+running install_lib
+running build_ext
+building 'mlperf_loadgen' extension
+creating build
+creating build/temp.linux-x86_64-cpython-39
+creating build/temp.linux-x86_64-cpython-39/bindings
+creating build/temp.linux-x86_64-cpython-39/generated
+gcc -pthread -B /opt/conda/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -O2 -Wall -fPIC -O2 -isystem /opt/conda/include -I/opt/conda/include -fPIC -O2 -isystem /opt/conda/include -std=c++14 -fPIC -DMAJOR_VERSION=3 -DMINOR_VERSION=1 -I. -I../third_party/pybind/include -I/opt/conda/include/python3.9 -c bindings/python_api.cc -o build/temp.linux-x86_64-cpython-39/bindings/python_api.o
+gcc -pthread -B /opt/conda/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -O2 -Wall -fPIC -O2 -isystem /opt/conda/include -I/opt/conda/include -fPIC -O2 -isystem /opt/conda/include -std=c++14 -fPIC -DMAJOR_VERSION=3 -DMINOR_VERSION=1 -I. -I../third_party/pybind/include -I/opt/conda/include/python3.9 -c early_stopping.cc -o build/temp.linux-x86_64-cpython-39/early_stopping.o
+gcc -pthread -B /opt/conda/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -O2 -Wall -fPIC -O2 -isystem /opt/conda/include -I/opt/conda/include -fPIC -O2 -isystem /opt/conda/include -std=c++14 -fPIC -DMAJOR_VERSION=3 -DMINOR_VERSION=1 -I. -I../third_party/pybind/include -I/opt/conda/include/python3.9 -c generated/version_generated.cc -o build/temp.linux-x86_64-cpython-39/generated/version_generated.o
+gcc -pthread -B /opt/conda/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -O2 -Wall -fPIC -O2 -isystem /opt/conda/include -I/opt/conda/include -fPIC -O2 -isystem /opt/conda/include -std=c++14 -fPIC -DMAJOR_VERSION=3 -DMINOR_VERSION=1 -I. -I../third_party/pybind/include -I/opt/conda/include/python3.9 -c issue_query_controller.cc -o build/temp.linux-x86_64-cpython-39/issue_query_controller.o
+gcc -pthread -B /opt/conda/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -O2 -Wall -fPIC -O2 -isystem /opt/conda/include -I/opt/conda/include -fPIC -O2 -isystem /opt/conda/include -std=c++14 -fPIC -DMAJOR_VERSION=3 -DMINOR_VERSION=1 -I. -I../third_party/pybind/include -I/opt/conda/include/python3.9 -c loadgen.cc -o build/temp.linux-x86_64-cpython-39/loadgen.o
+gcc -pthread -B /opt/conda/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -O2 -Wall -fPIC -O2 -isystem /opt/conda/include -I/opt/conda/include -fPIC -O2 -isystem /opt/conda/include -std=c++14 -fPIC -DMAJOR_VERSION=3 -DMINOR_VERSION=1 -I. -I../third_party/pybind/include -I/opt/conda/include/python3.9 -c logging.cc -o build/temp.linux-x86_64-cpython-39/logging.o
+gcc -pthread -B /opt/conda/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -O2 -Wall -fPIC -O2 -isystem /opt/conda/include -I/opt/conda/include -fPIC -O2 -isystem /opt/conda/include -std=c++14 -fPIC -DMAJOR_VERSION=3 -DMINOR_VERSION=1 -I. -I../third_party/pybind/include -I/opt/conda/include/python3.9 -c results.cc -o build/temp.linux-x86_64-cpython-39/results.o
+gcc -pthread -B /opt/conda/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -O2 -Wall -fPIC -O2 -isystem /opt/conda/include -I/opt/conda/include -fPIC -O2 -isystem /opt/conda/include -std=c++14 -fPIC -DMAJOR_VERSION=3 -DMINOR_VERSION=1 -I. -I../third_party/pybind/include -I/opt/conda/include/python3.9 -c test_settings_internal.cc -o build/temp.linux-x86_64-cpython-39/test_settings_internal.o
+gcc -pthread -B /opt/conda/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -O2 -Wall -fPIC -O2 -isystem /opt/conda/include -I/opt/conda/include -fPIC -O2 -isystem /opt/conda/include -std=c++14 -fPIC -DMAJOR_VERSION=3 -DMINOR_VERSION=1 -I. -I../third_party/pybind/include -I/opt/conda/include/python3.9 -c utils.cc -o build/temp.linux-x86_64-cpython-39/utils.o
+gcc -pthread -B /opt/conda/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -O2 -Wall -fPIC -O2 -isystem /opt/conda/include -I/opt/conda/include -fPIC -O2 -isystem /opt/conda/include -std=c++14 -fPIC -DMAJOR_VERSION=3 -DMINOR_VERSION=1 -I. -I../third_party/pybind/include -I/opt/conda/include/python3.9 -c version.cc -o build/temp.linux-x86_64-cpython-39/version.o
+creating build/lib.linux-x86_64-cpython-39
+g++ -pthread -B /opt/conda/compiler_compat -shared -Wl,-rpath,/opt/conda/lib -Wl,-rpath-link,/opt/conda/lib -L/opt/conda/lib -L/opt/conda/lib -Wl,-rpath,/opt/conda/lib -Wl,-rpath-link,/opt/conda/lib -L/opt/conda/lib -std=c++14 build/temp.linux-x86_64-cpython-39/bindings/python_api.o build/temp.linux-x86_64-cpython-39/early_stopping.o build/temp.linux-x86_64-cpython-39/generated/version_generated.o build/temp.linux-x86_64-cpython-39/issue_query_controller.o build/temp.linux-x86_64-cpython-39/loadgen.o build/temp.linux-x86_64-cpython-39/logging.o build/temp.linux-x86_64-cpython-39/results.o build/temp.linux-x86_64-cpython-39/test_settings_internal.o build/temp.linux-x86_64-cpython-39/utils.o build/temp.linux-x86_64-cpython-39/version.o -o build/lib.linux-x86_64-cpython-39/mlperf_loadgen.cpython-39-x86_64-linux-gnu.so
+creating build/bdist.linux-x86_64
+creating build/bdist.linux-x86_64/egg
+copying build/lib.linux-x86_64-cpython-39/mlperf_loadgen.cpython-39-x86_64-linux-gnu.so -> build/bdist.linux-x86_64/egg
+creating stub loader for mlperf_loadgen.cpython-39-x86_64-linux-gnu.so
+byte-compiling build/bdist.linux-x86_64/egg/mlperf_loadgen.py to mlperf_loadgen.cpython-39.pyc
+creating build/bdist.linux-x86_64/egg/EGG-INFO
+copying mlperf_loadgen.egg-info/PKG-INFO -> build/bdist.linux-x86_64/egg/EGG-INFO
+copying mlperf_loadgen.egg-info/SOURCES.txt -> build/bdist.linux-x86_64/egg/EGG-INFO
+copying mlperf_loadgen.egg-info/dependency_links.txt -> build/bdist.linux-x86_64/egg/EGG-INFO
+copying mlperf_loadgen.egg-info/top_level.txt -> build/bdist.linux-x86_64/egg/EGG-INFO
+writing build/bdist.linux-x86_64/egg/EGG-INFO/native_libs.txt
+creating dist
+creating 'dist/mlperf_loadgen-3.1-py3.9-linux-x86_64.egg' and adding 'build/bdist.linux-x86_64/egg' to it
+removing 'build/bdist.linux-x86_64/egg' (and everything under it)
+Processing mlperf_loadgen-3.1-py3.9-linux-x86_64.egg
+creating /opt/conda/lib/python3.9/site-packages/mlperf_loadgen-3.1-py3.9-linux-x86_64.egg
+Extracting mlperf_loadgen-3.1-py3.9-linux-x86_64.egg to /opt/conda/lib/python3.9/site-packages
+Adding mlperf-loadgen 3.1 to easy-install.pth file
+
+Installed /opt/conda/lib/python3.9/site-packages/mlperf_loadgen-3.1-py3.9-linux-x86_64.egg
+Processing dependencies for mlperf-loadgen==3.1
+Finished processing dependencies for mlperf-loadgen==3.1
+--> 145e7448973
+[4/4] STEP 11/12: ENV LD_PRELOAD "/opt/conda/lib/libiomp5.so"
+--> 14be74bf8d8
+[4/4] STEP 12/12: ENV CONDA_PREFIX "/opt/conda"
+[4/4] COMMIT mlperf_inference_dlrm2:3.1
+--> f9f69b09540
+[Warning] one or more build args were not consumed: [SOCKS_PROXY socks_proxy]
+Successfully tagged localhost/mlperf_inference_dlrm2:3.1
+f9f69b095409da560b6e961a36a89eff79097acf6a6580ca8dc994a5188b9f33

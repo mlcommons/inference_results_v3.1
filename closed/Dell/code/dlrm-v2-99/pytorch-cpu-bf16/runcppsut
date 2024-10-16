@@ -1,0 +1,47 @@
+#!/bin/bash
+test_type="PerformanceOnly"
+if [[ $1 == "accuracy" ]]; then
+    test_type="AccuracyOnly"
+fi
+scenario_type="Offline"
+if [[ $2 == "server" ]]; then
+    scenario_type="Server"
+fi
+export OMP_NUM_THREADS=1
+export KMP_BLOCKTIME=1
+#export OMP_NUM_THREADS=$CPUS_PER_SOCKET
+export KMP_AFFINITY="granularity=fine,compact,1,0"
+export DNNL_PRIMITIVE_CACHE_CAPACITY=20971520
+export LD_PRELOAD="${CONDA_PREFIX}/lib/libtcmalloc.so:${CONDA_PREFIX}/lib/libiomp5.so"
+export TCMALLOC_LARGE_ALLOC_REPORT_THRESHOLD=30469645312
+export DNNL_MAX_CPU_ISA=AVX512_CORE_AMX
+
+mode=PerformanceOnly
+mode=AccuracyOnly
+#valgrind --leak-check=full --show-leak-kinds=all \
+#gdb --args \
+export number_cores=`lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l`
+number_sockets=`grep physical.id /proc/cpuinfo | sort -u | wc -l`
+cpu_per_socket=$((number_cores/number_sockets))
+
+python ../../user_config.py
+
+src/build/dlrminf \
+    -alsologtostderr=1 \
+    -minloglevel=0 \
+    --v=0 \
+    --performance-sample-count=204800 \
+    --scenario=${scenario_type} \
+    --test-mode=${test_type} \
+    --logfile-outdir=output/ \
+    --logfile-prefix='mlperf_log_' \
+    --logfile-suffix='' \
+    --batch-size=16000 \
+    --num-sockets=$number_sockets \ #    --model=dlrm \
+    --cores-per-socket=$cpu_per_socke \
+    --num-producers=$number_sockets \
+    --consumers-per-producer=$cpu_per_socke \
+    --model-path=/DataDisk_3/syk/dlrm_model.npz \
+    --sample-partition-path=/DataDisk/dlrm_dataset/terabyte_input/sample_partition.npy \
+    --tensor-path=/DataDisk/dlrm_dataset/terabyte_input/y_batch.npy,/DataDisk/dlrm_dataset/terabyte_input/x_int_batch.npy,/DataDisk/dlrm_dataset/terabyte_input/x_cat_batch.npy
+

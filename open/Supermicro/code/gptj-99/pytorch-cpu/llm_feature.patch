@@ -1,0 +1,3528 @@
+diff --git a/csrc/cpu/aten/FlashAttention.cpp b/csrc/cpu/aten/FlashAttention.cpp
+new file mode 100644
+index 00000000..28423155
+--- /dev/null
++++ b/csrc/cpu/aten/FlashAttention.cpp
+@@ -0,0 +1,43 @@
++#include <torch/all.h>
++#include "FlashAttention.h"
++#include <torch/csrc/autograd/function.h>
++
++namespace torch_ipex {
++namespace cpu {
++
++DEFINE_DISPATCH(flash_attention_kernel_stub);
++
++/*
++*Caculate the flash attention SDPA. 
++*@param query
++*@param key
++*@param value
++*@param scale_attn
++*@param attention_mask
++*@return attn_outs
++*/
++at::Tensor flash_attention_forward_cpu(
++    at::Tensor query,
++    at::Tensor key,
++    at::Tensor value,
++    const double scale_attn,
++    at::Tensor attention_mask){
++  return flash_attention_kernel_stub(
++      kCPU, query, key, value, scale_attn, attention_mask);
++}
++
++} // namespace cpu
++} // namespace torch_ipex
++
++namespace {
++
++TORCH_LIBRARY_FRAGMENT(torch_ipex, m) {
++  m.def(
++      "flash_attention(Tensor query, Tensor key, Tensor value, \
++       float scale_attn, Tensor attention_mask)-> Tensor");
++  m.impl(
++      "flash_attention",
++      c10::DispatchKey::CPU,
++      torch_ipex::cpu::flash_attention_forward_cpu);
++}
++}
+diff --git a/csrc/cpu/aten/FlashAttention.h b/csrc/cpu/aten/FlashAttention.h
+new file mode 100644
+index 00000000..8e8e39b9
+--- /dev/null
++++ b/csrc/cpu/aten/FlashAttention.h
+@@ -0,0 +1,29 @@
++#pragma once
++
++#include <ATen/ATen.h>
++#include <dyndisp/DispatchStub.h>
++
++namespace torch_ipex {
++namespace cpu {
++
++namespace {
++
++at::Tensor flash_attention(
++    at::Tensor query,
++    at::Tensor key,
++    at::Tensor value,
++    const double scale_attn,
++    at::Tensor attention_mask);
++}
++
++using flash_attention_kernel_fn = at::Tensor (*)(
++    at::Tensor query,
++    at::Tensor key,
++    at::Tensor value,
++    const double scale_attn,
++    at::Tensor attention_mask);
++
++DECLARE_DISPATCH(flash_attention_kernel_fn, flash_attention_kernel_stub);
++
++} // namespace cpu
++} // namespace torch_ipex
+diff --git a/csrc/cpu/aten/TPPGEMM.cpp b/csrc/cpu/aten/TPPGEMM.cpp
+index fe8d7c7d..64569675 100644
+--- a/csrc/cpu/aten/TPPGEMM.cpp
++++ b/csrc/cpu/aten/TPPGEMM.cpp
+@@ -5,38 +5,73 @@
+ namespace torch_ipex {
+ namespace cpu {
+ 
+-DEFINE_DISPATCH(fc_in_kernel_stub);
+-DEFINE_DISPATCH(fc_out_kernel_stub);
+-DEFINE_DISPATCH(fc_plain_kernel_stub);
+-DEFINE_DISPATCH(qkv_kernel_stub);
++DEFINE_DISPATCH(tpp_linear_nobias_kernel_stub);
++DEFINE_DISPATCH(tpp_linear_bias_kernel_stub);
++DEFINE_DISPATCH(tpp_linear_gelu_kernel_stub);
++DEFINE_DISPATCH(tpp_linear_silu_kernel_stub);
++DEFINE_DISPATCH(tpp_linear_relu_kernel_stub);
++DEFINE_DISPATCH(tpp_linear_add_kernel_stub);
++DEFINE_DISPATCH(tpp_linear_mul_kernel_stub);
++DEFINE_DISPATCH(tpp_linear_add_add_kernel_stub);
+ 
++at::Tensor tpp_linear_nobias_forward_cpu(at::Tensor& t_in, at::Tensor& t_wt) {
++  return tpp_linear_nobias_kernel_stub(kCPU, t_in, t_wt);
++}
++
++at::Tensor tpp_linear_bias_forward_cpu(
++    at::Tensor& t_in,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias) {
++  return tpp_linear_bias_kernel_stub(kCPU, t_in, t_wt, t_bias);
++}
++
++at::Tensor tpp_linear_gelu_forward_cpu(
++    at::Tensor& t_in,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias) {
++  return tpp_linear_gelu_kernel_stub(kCPU, t_in, t_wt, t_bias);
++}
+ 
+-at::Tensor qkv_gemm_forward_cpu(at::Tensor& t_in, at::Tensor& t_wt) {
+-  return qkv_kernel_stub(kCPU, t_in, t_wt);
++at::Tensor tpp_linear_silu_forward_cpu(
++    at::Tensor& t_in,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias) {
++  return tpp_linear_silu_kernel_stub(kCPU, t_in, t_wt, t_bias);
+ }
+ 
+-at::Tensor fc_in_gemm_forward_cpu(
++at::Tensor tpp_linear_relu_forward_cpu(
+     at::Tensor& t_in,
+     at::Tensor& t_wt,
+     at::Tensor& t_bias) {
+-  return fc_in_kernel_stub(kCPU, t_in, t_wt, t_bias);
++  return tpp_linear_relu_kernel_stub(kCPU, t_in, t_wt, t_bias);
+ }
+ 
+-at::Tensor fc_plain_gemm_forward_cpu(
++at::Tensor tpp_linear_add_forward_cpu(
+     at::Tensor& t_in,
++    at::Tensor& t_in1,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias,
++    double scale) {
++  return tpp_linear_add_kernel_stub(kCPU, t_in, t_in1, t_wt, t_bias, scale);
++}
++
++at::Tensor tpp_linear_mul_forward_cpu(
++    at::Tensor& t_in,
++    at::Tensor& t_in1,
+     at::Tensor& t_wt,
+     at::Tensor& t_bias) {
+-  return fc_plain_kernel_stub(kCPU, t_in, t_wt, t_bias);
++  return tpp_linear_mul_kernel_stub(kCPU, t_in, t_in1, t_wt, t_bias);
+ }
+ 
+-at::Tensor fc_out_gemm_forward_cpu(
++at::Tensor tpp_linear_add_add_forward_cpu(
+     at::Tensor& t_in,
+     at::Tensor& t_in1,
+     at::Tensor& t_in2,
+     at::Tensor& t_wt,
+     at::Tensor& t_bias,
+     double scale) {
+-  return fc_out_kernel_stub(kCPU, t_in, t_in1, t_in2, t_wt, t_bias, scale);
++  return tpp_linear_add_add_kernel_stub(
++      kCPU, t_in, t_in1, t_in2, t_wt, t_bias, scale);
+ }
+ 
+ } // namespace cpu
+@@ -44,31 +79,75 @@ at::Tensor fc_out_gemm_forward_cpu(
+ 
+ namespace {
+ 
++TORCH_LIBRARY_FRAGMENT(torch_ipex, m) {
++  m.def("tpp_linear(Tensor (a!)t_in, Tensor (a!)t_wt)-> Tensor out");
++  m.impl(
++      "tpp_linear",
++      c10::DispatchKey::CPU,
++      torch_ipex::cpu::tpp_linear_nobias_forward_cpu);
++}
+ 
+ TORCH_LIBRARY_FRAGMENT(torch_ipex, m) {
+-  m.def("qkv_gemm(Tensor (a!)t_in, Tensor (a!)t_wt)-> Tensor out");
++  m.def(
++      "tpp_linear_bias(Tensor (a!)t_in, Tensor (a!)t_wt, Tensor (a!)t_bias)-> Tensor out");
+   m.impl(
+-      "qkv_gemm", c10::DispatchKey::CPU, torch_ipex::cpu::qkv_gemm_forward_cpu);
++      "tpp_linear_bias",
++      c10::DispatchKey::CPU,
++      torch_ipex::cpu::tpp_linear_bias_forward_cpu);
+ }
+ 
+ TORCH_LIBRARY_FRAGMENT(torch_ipex, m) {
+   m.def(
+-      "fc_in_gemm(Tensor (a!)t_in, Tensor (a!)t_wt, Tensor (a!)t_bias)-> Tensor out");
+-  m.impl("fc_in_gemm", c10::DispatchKey::CPU, torch_ipex::cpu::fc_in_gemm_forward_cpu);
++      "tpp_linear_gelu(Tensor (a!)t_in, Tensor (a!)t_wt, Tensor (a!)t_bias)-> Tensor out");
++  m.impl(
++      "tpp_linear_gelu",
++      c10::DispatchKey::CPU,
++      torch_ipex::cpu::tpp_linear_gelu_forward_cpu);
+ }
+ 
+ TORCH_LIBRARY_FRAGMENT(torch_ipex, m) {
+   m.def(
+-      "fc_plain_gemm(Tensor (a!)t_in, Tensor (a!)t_wt, Tensor (a!)t_bias)-> Tensor out");
+-  m.impl("fc_plain_gemm", c10::DispatchKey::CPU, torch_ipex::cpu::fc_plain_gemm_forward_cpu);
++      "tpp_linear_add_add(Tensor (a!)t_in, Tensor (a!)t_in1, Tensor (a!)t_in2, Tensor (a!)t_wt, Tensor (a!)t_bias, float scale )-> Tensor out");
++  m.impl(
++      "tpp_linear_add_add",
++      c10::DispatchKey::CPU,
++      torch_ipex::cpu::tpp_linear_add_add_forward_cpu);
+ }
+ 
++TORCH_LIBRARY_FRAGMENT(torch_ipex, m) {
++  m.def(
++      "tpp_linear_relu(Tensor (a!)t_in, Tensor (a!)t_wt, Tensor (a!)t_bias)-> Tensor out");
++  m.impl(
++      "tpp_linear_relu",
++      c10::DispatchKey::CPU,
++      torch_ipex::cpu::tpp_linear_relu_forward_cpu);
++}
+ 
+ TORCH_LIBRARY_FRAGMENT(torch_ipex, m) {
+   m.def(
+-      "fc_out_gemm(Tensor (a!)t_in, Tensor (a!)t_in1, Tensor (a!)t_in2, Tensor (a!)t_wt, Tensor (a!)t_bias, float scale )-> Tensor out");
+-  m.impl("fc_out_gemm", c10::DispatchKey::CPU,
+-  torch_ipex::cpu::fc_out_gemm_forward_cpu);
++      "tpp_linear_silu(Tensor (a!)t_in, Tensor (a!)t_wt, Tensor (a!)t_bias)-> Tensor out");
++  m.impl(
++      "tpp_linear_silu",
++      c10::DispatchKey::CPU,
++      torch_ipex::cpu::tpp_linear_silu_forward_cpu);
++}
++
++TORCH_LIBRARY_FRAGMENT(torch_ipex, m) {
++  m.def(
++      "tpp_linear_add(Tensor (a!)t_in, Tensor (a!)t_in1, Tensor (a!)t_wt, Tensor (a!)t_bias, float scale )-> Tensor out");
++  m.impl(
++      "tpp_linear_add",
++      c10::DispatchKey::CPU,
++      torch_ipex::cpu::tpp_linear_add_forward_cpu);
++}
++
++TORCH_LIBRARY_FRAGMENT(torch_ipex, m) {
++  m.def(
++      "tpp_linear_mul(Tensor (a!)t_in, Tensor (a!)t_in1, Tensor (a!)t_wt, Tensor (a!)t_bias )-> Tensor out");
++  m.impl(
++      "tpp_linear_mul",
++      c10::DispatchKey::CPU,
++      torch_ipex::cpu::tpp_linear_mul_forward_cpu);
+ }
+ 
+ } // namespace
+\ No newline at end of file
+diff --git a/csrc/cpu/aten/TPPGEMM.h b/csrc/cpu/aten/TPPGEMM.h
+index d1749e24..311549b2 100644
+--- a/csrc/cpu/aten/TPPGEMM.h
++++ b/csrc/cpu/aten/TPPGEMM.h
+@@ -7,36 +7,72 @@ namespace torch_ipex {
+ namespace cpu {
+ 
+ namespace {
+-at::Tensor fc_in_kernel_impl(
++at::Tensor tpp_linear_nobias_forward_cpu(at::Tensor& t_in, at::Tensor& t_wt);
++
++at::Tensor tpp_linear_bias_forward_cpu(
+     at::Tensor& t_in,
+     at::Tensor& t_wt,
+     at::Tensor& t_bias);
+ 
+-at::Tensor fc_plain_kernel_impl(
++at::Tensor tpp_linear_gelu_forward_cpu(
+     at::Tensor& t_in,
+     at::Tensor& t_wt,
+     at::Tensor& t_bias);
+ 
++at::Tensor tpp_linear_silu_forward_cpu(
++    at::Tensor& t_in,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias);
++
++at::Tensor tpp_linear_relu_forward_cpu(
++    at::Tensor& t_in,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias);
+ 
+-at::Tensor fc_out_kernel_impl(
++at::Tensor tpp_linear_add_forward_cpu(
+     at::Tensor& t_in,
+     at::Tensor& t_in1,
+-    at::Tensor& t_in2,
+     at::Tensor& t_wt,
+     at::Tensor& t_bias,
+     double scale);
+ 
+-at::Tensor qkv_kernel_impl(at::Tensor& t_in, at::Tensor& t_wt);
++at::Tensor tpp_linear_mul_forward_cpu(
++    at::Tensor& t_in,
++    at::Tensor& t_in1,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias);
++
++at::Tensor tpp_linear_add_add_forward_cpu(
++    at::Tensor& t_in,
++    at::Tensor& t_in1,
++    at::Tensor& t_in2,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias,
++    double scale);
+ 
+ } // namespace
+ 
+-using fc_in_kernel_impl_fn =
++using tpp_linear_nobias_impl_fn = at::Tensor (*)(at::Tensor&, at::Tensor&);
++
++using tpp_linear_bias_kernel_impl_fn =
+     at::Tensor (*)(at::Tensor&, at::Tensor&, at::Tensor&);
+ 
+-using fc_plain_kernel_impl_fn =
++using tpp_linear_gelu_kernel_impl_fn =
+     at::Tensor (*)(at::Tensor&, at::Tensor&, at::Tensor&);
+ 
+-using fc_out_kernel_impl_fn = at::Tensor (*)(
++using tpp_linear_silu_kernel_impl_fn =
++    at::Tensor (*)(at::Tensor&, at::Tensor&, at::Tensor&);
++
++using tpp_linear_relu_kernel_impl_fn =
++    at::Tensor (*)(at::Tensor&, at::Tensor&, at::Tensor&);
++
++using tpp_linear_add_kernel_impl_fn =
++    at::Tensor (*)(at::Tensor&, at::Tensor&, at::Tensor&, at::Tensor&, double);
++
++using tpp_linear_mul_kernel_impl_fn =
++    at::Tensor (*)(at::Tensor&, at::Tensor&, at::Tensor&, at::Tensor&);
++
++using tpp_linear_add_add_kernel_impl_fn = at::Tensor (*)(
+     at::Tensor&,
+     at::Tensor&,
+     at::Tensor&,
+@@ -44,12 +80,16 @@ using fc_out_kernel_impl_fn = at::Tensor (*)(
+     at::Tensor&,
+     double);
+ 
+-using qkv_kernel_impl_fn = at::Tensor (*)(at::Tensor&, at::Tensor&);
+-
+-DECLARE_DISPATCH(fc_plain_kernel_impl_fn, fc_plain_kernel_stub);
+-DECLARE_DISPATCH(fc_in_kernel_impl_fn, fc_in_kernel_stub);
+-DECLARE_DISPATCH(fc_out_kernel_impl_fn, fc_out_kernel_stub);
+-DECLARE_DISPATCH(qkv_kernel_impl_fn, qkv_kernel_stub);
++DECLARE_DISPATCH(tpp_linear_nobias_impl_fn, tpp_linear_nobias_kernel_stub);
++DECLARE_DISPATCH(tpp_linear_bias_kernel_impl_fn, tpp_linear_bias_kernel_stub);
++DECLARE_DISPATCH(tpp_linear_gelu_kernel_impl_fn, tpp_linear_gelu_kernel_stub);
++DECLARE_DISPATCH(tpp_linear_silu_kernel_impl_fn, tpp_linear_silu_kernel_stub);
++DECLARE_DISPATCH(tpp_linear_relu_kernel_impl_fn, tpp_linear_relu_kernel_stub);
++DECLARE_DISPATCH(tpp_linear_add_kernel_impl_fn, tpp_linear_add_kernel_stub);
++DECLARE_DISPATCH(tpp_linear_mul_kernel_impl_fn, tpp_linear_mul_kernel_stub);
++DECLARE_DISPATCH(
++    tpp_linear_add_add_kernel_impl_fn,
++    tpp_linear_add_add_kernel_stub);
+ 
+ } // namespace cpu
+ } // namespace torch_ipex
+\ No newline at end of file
+diff --git a/csrc/cpu/aten/kernels/FlashAttentionKrnl.cpp b/csrc/cpu/aten/kernels/FlashAttentionKrnl.cpp
+new file mode 100644
+index 00000000..3f736362
+--- /dev/null
++++ b/csrc/cpu/aten/kernels/FlashAttentionKrnl.cpp
+@@ -0,0 +1,239 @@
++#include <ATen/Tensor.h>
++#include <aten/FlashAttention.h>
++#include <torch/all.h>
++#include <torch/csrc/autograd/function.h>
++#include <limits>
++#include "mkl.h"
++#include "vec/vec.h"
++
++namespace torch_ipex {
++namespace cpu {
++
++namespace {
++
++const int64_t qsplit_size = 384;
++const int64_t kvsplit_size = 512;
++
++#if defined(CPU_CAPABILITY_AVX512)
++using namespace torch_ipex::cpu::kernel;
++
++template <typename scalar_t>
++void _mha_mul_softmax_bf16_kernel(
++    float* a,
++    scalar_t* b,
++    float* dst,
++    float* max,
++    float* sum,
++    const int& qsize,
++    const int& kvsize,
++    const int& headsize,
++    const int& idx) {
++  float tmp_max = 0.f, tmp_sum = 0.f, sum_old = 0.f, exp_tmp = 0.f;
++
++  for (int i = 0; i < qsize; ++i) {
++    sum_old = sum[i];
++
++    _dil_reduce_max_fusion_kernel(
++        a + i * kvsize, kvsize, a + i * kvsize, tmp_max);
++    tmp_max = max[i] > tmp_max ? max[i] : tmp_max;
++
++    tmp_sum = tmp_max;
++    _dil_exp_reduce_sum_fusion_kernel(
++        a + i * kvsize, kvsize, a + i * kvsize, tmp_sum);
++    exp_tmp = exp(max[i] - tmp_max);
++    sum[i] = tmp_sum + exp_tmp * sum[i];
++    max[i] = tmp_max;
++
++    _dil_normalization_kernel<scalar_t>(
++        a + i * kvsize, sum[i], kvsize, b + i * kvsize);
++
++    if (idx) {
++      _mha_update_sum_max_kernel(
++          dst + i * headsize,
++          sum_old,
++          sum[i],
++          exp_tmp,
++          headsize,
++          dst + i * headsize);
++    }
++  }
++}
++
++at::Tensor flash_base_kernel(
++    at::BFloat16* query,
++    at::BFloat16* key,
++    at::BFloat16* value,
++    at::BFloat16* attn_mask,
++    const int64_t& qStride,
++    const int64_t& kStride,
++    const int64_t& vStride,
++    const int64_t& batchSize,
++    const int64_t& qSize,
++    const int64_t& kvSize,
++    const int64_t& num_head,
++    const int64_t& headSize,
++    const int64_t& hiddenSize,
++    const double& scale) {
++  at::Tensor output = at::empty({batchSize, qSize, hiddenSize}, at::kBFloat16);
++
++  int64_t qSplitSize = qSize >= qsplit_size ? qsplit_size : qSize;
++  int64_t kvSplitSize = kvSize >= kvsplit_size ? kvsplit_size : kvSize;
++
++  int64_t qSlice = (qSize - 1) / qSplitSize + 1;
++  int64_t qTail = (qSize - 1) % qSplitSize + 1;
++  int64_t kvSlice = (kvSize - 1) / kvSplitSize + 1;
++  int64_t kvTail = (kvSize - 1) % kvSplitSize + 1;
++
++  int64_t num_thread = omp_get_max_threads();
++
++  at::Tensor qk_fp32 =
++      at::empty({num_thread, qSplitSize, kvSplitSize}, at::kFloat);
++  at::Tensor qk_bf16 =
++      at::empty({num_thread, qSplitSize, kvSplitSize}, at::kBFloat16);
++  at::Tensor qk_max = at::empty({num_thread, qSplitSize}, at::kFloat);
++  at::Tensor qk_sum = at::empty({num_thread, qSplitSize}, at::kFloat);
++  at::Tensor dst_fp32 =
++      at::empty({num_thread, qSplitSize, headSize}, at::kFloat);
++
++#pragma omp parallel for collapse(3)
++  for (int i = 0; i < batchSize; ++i) {
++    for (int j = 0; j < num_head; ++j) {
++      for (int k = 0; k < qSlice; ++k) {
++        int qBlockSize = (k == qSlice - 1) ? qTail : qSplitSize;
++        int ompIdx = omp_get_thread_num();
++        _init_mha_buffer_kernel(
++            qk_max.data_ptr<float>() + ompIdx * qSplitSize,
++            qk_sum.data_ptr<float>() + ompIdx * qSplitSize,
++            qBlockSize);
++
++        for (int l = 0; l < kvSlice; ++l) {
++          int kvBlockSize = (l == kvSlice - 1) ? kvTail : kvSplitSize;
++          cblas_gemm_bf16bf16f32(
++              CblasRowMajor,
++              CblasNoTrans,
++              CblasTrans,
++              qBlockSize,
++              kvBlockSize,
++              headSize,
++              float(1.f / scale),
++              (const MKL_BF16*)(query + i * qSize * qStride + headSize * j + k * qSplitSize * qStride),
++              qStride,
++              (const MKL_BF16*)(key + i * kvSize * kStride + headSize * j + l * kvSplitSize * kStride),
++              kStride,
++              0.f,
++              qk_fp32.data_ptr<float>() + ompIdx * qSplitSize * kvSplitSize,
++              kvBlockSize);
++
++          // update attention weights with attention mask
++          for (int r = 0; r < qBlockSize; r++) {
++            _dil_add_kernel<at::BFloat16>(
++              attn_mask + i * qSize * kvSize + (k * qSplitSize + r) * kvSize + l * kvSplitSize,
++              qk_fp32.data_ptr<float>() + ompIdx * qSplitSize * kvSplitSize + r * kvBlockSize,
++              kvBlockSize);
++          }
++
++          _mha_mul_softmax_bf16_kernel<at::BFloat16>(
++              qk_fp32.data_ptr<float>() + ompIdx * qSplitSize * kvSplitSize,
++              qk_bf16.data_ptr<at::BFloat16>() +
++                  ompIdx * qSplitSize * kvSplitSize,
++              dst_fp32.data_ptr<float>() + ompIdx * qSplitSize * headSize,
++              qk_max.data_ptr<float>() + ompIdx * qSplitSize,
++              qk_sum.data_ptr<float>() + ompIdx * qSplitSize,
++              qBlockSize,
++              kvBlockSize,
++              headSize,
++              l);
++
++          cblas_gemm_bf16bf16f32(
++              CblasRowMajor,
++              CblasNoTrans,
++              CblasNoTrans,
++              qBlockSize,
++              headSize,
++              kvBlockSize,
++              1.f,
++              (const MKL_BF16*)(qk_bf16.data_ptr<at::BFloat16>() + ompIdx * qSplitSize * kvSplitSize),
++              kvBlockSize,
++              (const MKL_BF16*)(value + i * kvSize * vStride + headSize * j + l * kvSplitSize * vStride),
++              vStride,
++              l == 0 ? 0.f : 1.f,
++              dst_fp32.data_ptr<float>() + ompIdx * qSplitSize * headSize,
++              headSize);
++        }
++        _reorder_mha_output_kernel<at::BFloat16>(
++            dst_fp32.data_ptr<float>() + ompIdx * qSplitSize * headSize,
++            output.data_ptr<at::BFloat16>() + i * qSize * hiddenSize +
++                headSize * j + k * qSplitSize * hiddenSize,
++            qBlockSize,
++            headSize,
++            hiddenSize);
++      }
++    }
++  }
++  return output;
++}
++#endif
++
++at::Tensor flash_attention_kernel_impl(
++    at::Tensor query,
++    at::Tensor key,
++    at::Tensor value,
++    const double scale_attn,
++    at::Tensor attention_mask) {
++    if (query.scalar_type() != at::kBFloat16
++             || query.dtype() != key.dtype()
++             || query.dtype() != attention_mask.dtype()) {
++        TORCH_CHECK(false, "Q/K/V/AttnMask must be BF16 to use ipex::flash_attention_kernel_impl");
++    }
++    if(query.dim() != 4 || key.dim() != 4 || value.dim() != 4){
++        TORCH_CHECK(false, "Q/K/V must be 4D for ipex::flash_attention_kernel_impl");
++    }
++    TORCH_CHECK(attention_mask.size(1) == 1, "Attetntion mask size(1) != 1 for ipex::flash_attention_kernel_imp");
++
++#if defined(CPU_CAPABILITY_AVX512)
++    int64_t batchSize = query.size(0);
++    int64_t qSize = query.size(1);
++    int64_t kvSize = value.size(1);
++    int64_t num_head = query.size(2);
++    int64_t headSize = query.size(3);
++    int64_t hiddenSize = num_head * headSize;
++
++    int64_t qStride = query.stride(1);
++    int64_t kStride = key.stride(1);
++    int64_t vStride = value.stride(1);
++    auto attn_outputs = flash_base_kernel(
++      query.data_ptr<at::BFloat16>(),
++      key.data_ptr<at::BFloat16>(),
++      value.data_ptr<at::BFloat16>(),
++      attention_mask.data_ptr<at::BFloat16>(),
++      qStride,
++      kStride,
++      vStride,
++      batchSize,
++      qSize,
++      kvSize,
++      num_head,
++      headSize,
++      hiddenSize,
++      scale_attn);
++    return attn_outputs.resize_(
++        {batchSize, qSize, num_head, headSize}).transpose_(1, 2);
++#else
++    key = key.permute({0, 2, 1, 3});
++    query = query.permute({0, 2, 1, 3});
++    value = value.permute({0, 2, 1, 3});
++    auto attn_weights = query.matmul(key.transpose(-1, -2));
++    attn_weights = attn_weights.div(scale_attn);
++    attn_weights = attn_weights + attention_mask;
++    attn_weights = attn_weights.softmax(-1);
++    attn_weights = attn_weights.to(value.dtype());
++    auto out = attn_weights.matmul(value);
++    return out;
++#endif
++}
++} // anonymous namespace
++
++REGISTER_DISPATCH(flash_attention_kernel_stub, &flash_attention_kernel_impl);
++
++} // namespace cpu
++} // namespace torch_ipex
+diff --git a/csrc/cpu/aten/kernels/MaskedMultiHeadAttentionKrnl.cpp b/csrc/cpu/aten/kernels/MaskedMultiHeadAttentionKrnl.cpp
+index 4e3d162c..1ad4f04c 100644
+--- a/csrc/cpu/aten/kernels/MaskedMultiHeadAttentionKrnl.cpp
++++ b/csrc/cpu/aten/kernels/MaskedMultiHeadAttentionKrnl.cpp
+@@ -1,7 +1,9 @@
++#include <ATen/Tensor.h>
++#include <aten/FlashAttention.h>
+ #include <aten/MaskedMultiHeadAttention.h>
+-#include <torch/csrc/autograd/function.h>
+ #include <torch/all.h>
+-#include <ATen/Tensor.h>
++#include <torch/csrc/autograd/function.h>
++#include <limits>
+ #include "vec/vec.h"
+ 
+ namespace torch_ipex {
+@@ -198,171 +200,306 @@ void mul_attenion_weights_and_value_of_head(
+ 
+ }
+ 
+-/* 
+-*The scale-dot product for indirect access kv chache and fuse matmul+div+add+softmax to improve data reuse
+-*@param  query Query embeeding with the of [beam_size*batch, cur_len, head_num, head_size]
+-*@param  key Key embeeding with the of [beam_size*batch, cur_len, head_num, head_size]
+-*@param  beam_idx Beam info for every token [beam_size, offset]
+-*@param  key_cache Cache past key embeeding with the of [max_len, beam_size*batch, cur_len, head_num, head_size]
+-*@param  offset  The length of decoded(past) token. 
+-*@param  scale_factor the sqrt(head_dim).
+-*@param  attention_mask Which is combined mask for padding mask and casual mask. 
+-*@param  value The vaule for current tokens. 
+-*@param  value_chache Cache past value embeeding with the of [max_len, beam_size*batch, cur_len, head_num, head_size]
+-*@return attn_outs With shape of [beam*bs, head_num, 1, head_size]
+-*/
+-template<typename T>
+-at::Tensor scale_dot_product_for_indirect_access_kv_cache(at::Tensor query, at::Tensor key, const std::vector<std::vector<long>> beam_idx, at::Tensor 
+-&key_cache, int offset, float scale_factor, at::Tensor attention_mask, at::Tensor value, at::Tensor &value_cache){
+-    RECORD_FUNCTION("ipex::scale_dot_product_for_indirect_access_kv_cache", c10::ArrayRef<c10::IValue>({}));
+-    auto bs = query.size(0);//beam_size * batch_size
+-    auto cur_len = query.size(1);// only process cur_len==1
+-    auto head_num = query.size(2);
+-    auto kv_head = key.size(2);
+-    auto group_size = head_num / kv_head;    
+-    auto head_size = query.size(3);  
+-    auto seq_len = offset + cur_len;
+-    auto kc_token_stride = bs * kv_head * head_size;
+-    auto attn_weights = at::empty({bs, head_num, cur_len, seq_len}, key.options());   
+-    query = query.contiguous();
+-    key = key.contiguous();
+-    auto q_ptr = query.data_ptr<T>();
+-    auto k_ptr = key.data_ptr<T>();
+-    auto k_cache_ptr = key_cache.data_ptr<T>();
+-    auto attn_w_ptr = attn_weights.data_ptr<T>();    
+-    auto mask_ptr = attention_mask.data_ptr<T>();
+-    auto mask_head_num = attention_mask.size(1);
+-    auto mask_token_stride = mask_head_num * cur_len * seq_len;    
+-    //value realted 
+-    value = value.contiguous();
+-    auto attn_outs = at::empty({bs, head_num, cur_len, head_size}, value.options());
+-    auto v_ptr = value.data_ptr<T>();
+-    auto v_cache_ptr = value_cache.data_ptr<T>();
+-    auto attn_out_ptr = attn_outs.data_ptr<T>();    
+-
+-    //query Query embeeding with the of [beam_size*batch, cur_len, head_num, head_size]
+-    //key Key embeeding with the of [beam_size*batch, cur_len, head_num, head_size]
+-    //key_cache Cache past key embeeding with the of [past_len, beam_size*batch, cur_len, head_num, head_size]
+-    //Try to reshape the query to [beam_size*batch, cur_len, head_size, head_num]    
+-    #pragma omp parallel for collapse(2)
+-    for(auto bi = 0; bi < bs; bi++){
+-        for (auto hi = 0; hi < head_num; hi++){
+-            auto kv_hi = hi / group_size;//maping the query head to key/value head to support MGA/MQA
+-           //printf("group_size:%d hi:%d kv_hi:%d kv_head:%d", group_size, hi, kv_hi, kv_head);
+-           //fflush(stdout); 
+-           // e.g.,cur_len = 2, past_len=3
+-           // query:            t4 t5 
+-           // key:  t0 t1 t2 t3 t4 t5
+-           //output shape (2, 5)
+-           //[qk_t0 qk_t1 qk_t2 qk_t3 qk_t4 -10000.0]
+-           //[qk_t0 qk_t1 qk_t2 qk_t3 qk_t4 qk_t5   ]
+-           //fused div+add+softmax
+-           float p[cur_len][seq_len];
+-           auto mask_ptr_start = mask_ptr + bi * mask_token_stride;
+-           for(auto query_ti = 0; query_ti < cur_len; query_ti++){
+-                for(auto ti = 0; ti < seq_len; ti++){                           
+-                    //auto t_out_stride  =  out_stride + query_ti * seq_len;
+-                    //auto attn_w_pos = attn_w_ptr + t_out_stride + ti ;
+-                    auto q_ptr_start = q_ptr + (bi * cur_len + query_ti) * head_num * head_size  + hi * head_size;                    
+-                    auto k_ptr_start = k_ptr + (bi * cur_len + query_ti) * kv_head * head_size + kv_hi * head_size;   
+-                    p[query_ti][ti] = 0.0f;                 
+-                    if(ti > query_ti + offset){//only caculate the innerproduct for the past token and current token
+-                        p[query_ti][ti] = -100000.0;
+-                    }else if(ti == query_ti + offset){//caculate the innerproduct for the current token and store the key
+-                        auto kc_token_start = ti * kc_token_stride;
+-                        auto kc_t_beam_start = kc_token_start + bi * kv_head * head_size;
+-                        auto kc_head_start = k_cache_ptr + kc_t_beam_start + kv_hi * head_size;            
+-                        reduce_head<T>(q_ptr_start, k_ptr_start, &p[query_ti][ti], head_size, true, kc_head_start);
+-                    }else{//caculate the innerproduct for the past token
+-                        auto kc_token_start = ti * kc_token_stride;
+-                        auto kc_t_beam_start = kc_token_start + beam_idx[bi][ti] * kv_head * head_size;
+-                        auto kc_head_start = k_cache_ptr + kc_t_beam_start + kv_hi * head_size;                        
+-                        reduce_head<T>(q_ptr_start, kc_head_start, &p[query_ti][ti], head_size, false, nullptr);                
+-                    }                                    
+-                }                    
+-            }
+-            
+-            //div+add+softmax            
+-            #if defined(CPU_CAPABILITY_AVX512)
+-            for(auto qi = 0; qi < cur_len; qi++){
+-                auto max_val = -100000.0f;
+-                torch_ipex::cpu::kernel::_dil_div_add_reduce_max_fusion_kernel<float, T>(&p[qi][0], mask_ptr_start+qi*seq_len, scale_factor, seq_len, &p[qi][0], max_val);
+-                torch_ipex::cpu::kernel::_dil_exp_reduce_sum_fusion_kernel(&p[qi][0], seq_len, &p[qi][0], max_val);
+-                torch_ipex::cpu::kernel::_dil_normalization_kernel<float>(&p[qi][0], max_val, seq_len, &p[qi][0]);
+-            }
+-            #else
+-            assert(false && "AVX512 is required in ipex::scale_dot_product_for_indirect_access_kv_cache");
+-            #endif
+-            //calculate weighted value and store the result to attn_outs[bs, head_num, cur_len, head_size]   
+-            auto attn_out_head_stride = (bi * head_num + hi) * cur_len * head_size;         
+-            for(auto qi = 0; qi < cur_len; qi++){
+-                auto attn_out_start = attn_out_ptr + attn_out_head_stride + qi * head_size;
+-                for(auto i = 0; i < head_size; i++){
+-                    attn_out_start[i] = 0.0f;
+-                }
+-                for(auto vi = 0; vi < seq_len; vi++){
+-                    auto vc_token_start = vi * kc_token_stride;                    
+-                    if(vi == qi + offset){//caculate the attention values for the current token
+-                        auto vc_t_beam_start = vc_token_start + bi * kv_head * head_size;
+-                        auto v_cache_head_start = v_cache_ptr + vc_t_beam_start + kv_hi * head_size;                        
+-                        auto v_ptr_start = v_ptr + (bi * cur_len + qi) * kv_head * head_size + kv_hi * head_size;
+-                        mul_attenion_weights_and_value_of_head<T>(p[qi][vi], v_ptr_start, attn_out_start, head_size, true, v_cache_head_start);
+-                    }else{//caculate attention values for the past token                        
+-                        auto vc_t_beam_start = vc_token_start + beam_idx[bi][vi] * kv_head * head_size;
+-                        auto v_cache_head_start = v_cache_ptr + vc_t_beam_start + kv_hi * head_size;
+-                        mul_attenion_weights_and_value_of_head<T>(p[qi][vi], v_cache_head_start, attn_out_start, head_size, false, nullptr);
+-                    }                   
+-                }
+-            }
+-        }        
++template <typename T>
++void copy_key_value(
++    at::Tensor key_cache,
++    const at::Tensor key,
++    at::Tensor value_cache,
++    const at::Tensor value,
++    int beam_batch) {
++  RECORD_FUNCTION("ipex::copy_key_value", c10::ArrayRef<c10::IValue>({}));
++  auto bs = key.size(0);
++  auto seq_len = key.size(1); // only process cur_len==1
++  auto head_num = key.size(2);
++  auto head_size = key.size(3);
++  auto hidden_size = head_num * head_size;
++  auto key_cache_ptr = key_cache.data_ptr<T>();
++  auto key_ptr = key.data_ptr<T>();
++  auto value_cache_ptr = value_cache.data_ptr<T>();
++  auto value_ptr = value.data_ptr<T>();
++  auto token_stride = beam_batch * hidden_size;
++  auto beam_size = beam_batch / bs;
++#pragma omp parallel for collapse(2)
++  for (auto si = 0; si < seq_len; si++) {
++    for (auto bi = 0; bi < bs; bi++) {
++      auto cache_stride = si * token_stride + bi * beam_size * hidden_size;
++      auto state_stride = (bi * seq_len + si) * hidden_size;
++      auto key_cache_start = key_cache_ptr + cache_stride;
++      auto key_ptr_start = key_ptr + state_stride;
++      torch_ipex::cpu::kernel::move_ker<T, T>(key_cache_start, key_ptr_start, hidden_size);
++      auto value_cache_ptr_start = value_cache_ptr + cache_stride;
++      auto value_ptr_start = value_ptr + state_stride;
++      torch_ipex::cpu::kernel::move_ker<T, T>(value_cache_ptr_start, value_ptr_start, hidden_size);
+     }
+-    return attn_outs;
++  }
+ }
+ 
+ /* 
+-*The masked self attention for decoder layer with zero-copy of kv_cache
++*The scale-dot product for indirect access kv chache and fuse matmul+div+add+softmax to improve data reuse
+ *@param  query Query embeeding with the of [beam_size*batch, cur_len, head_num, head_size]
+ *@param  key Key embeeding with the of [beam_size*batch, cur_len, head_num, head_size]
+-*@param  value Value embeeding with the of [beam_size*batch, cur_len, head_num, head_size] -> Todo may be perf is better with [beam_size*batch, cur_len, head_size, head_num]
+-*@param  key_cache Cache past key embeeding with the of [max_seq_len, beam_size*batch, cur_len, head_num, head_size], the past key state is (beam_size, 1, head_num, head_size) for every token
+-*@param  value_cache Cache past value embeeding with the of [max_seq_len, beam_size*batch, cur_len, head_num, head_size], the past value state is (beam_size, 1, head_num, head_size) for every token
+-*@param  beam_idx Cache past beam_idx with the of [max_positions, bs]
++*@param  value Key embeeding with the of [beam_size*batch, cur_len, head_num, head_size]
++*@param  key_cache Cache past key embeeding with the of [max_len, beam_size*batch, head_num, head_size]
++*@param  value_chache Cache past value embeeding with the of [max_len, beam_size*batch, head_num, head_size]
++*@param  beam_idx Beam info for every token [max_len, beam_size*batch]
+ *@param  offset  The length of decoded(past) token. 
+-*@return attn_outs, attn_weights
++*@param  scale_factor the sqrt(head_dim).
++*@param  head_mask Which is not used by our kernel now. 
++*@param  attention_mask Which is combined mask for padding mask and casual mask. 
++*@return attn_outs, None, key_cache, value_cache, beam_idx
+ */
+-template <typename Q_T, typename V_T> 
+-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>  MaskedMHAKernel(
++template <typename QT, typename VT>
++std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>  scale_dot_product_for_indirect_access_kv_cache(
+     at::Tensor query,
+     at::Tensor key,
+     at::Tensor value,
+     at::Tensor& key_cache,
+     at::Tensor& value_cache,
+-    at::Tensor&  beam_idx,
+-    const int64_t offset, 
+-    const float scale_attn,
+-    const int64_t max_positions,
+-    const c10::optional<at::Tensor>& head_mask/* optional */,
+-    const c10::optional<at::Tensor>& attention_mask/* optional */) {
+-    //assert(query.size(1) == 1);
+-    //beam_idx: [beam_size, offset] for every decoded token, the beam_idx is the target beam idx for the past token
+-    //the target beam_idx for the input tokens are always 0
+-    //compute the offset info for the past token 
+-    //std::cout << "beam_idx:" << beam_idx << std::endl;
+-    auto bs = query.size(0);
+-    //the targe beam for the past token 
+-    auto new_beam_idx = std::vector<std::vector<long>>(bs, std::vector<long>(offset+query.size(1), 0));
+-    auto b_ptr = beam_idx.data_ptr<long>();
+-    for(auto i = 0; i < bs; i++){
+-        new_beam_idx[i][offset-1] = b_ptr[(offset-1) * bs + i];
+-        for(auto j = offset-2; j>=0; j--){//for the token of input, the target beam is alwarys 0 
+-            new_beam_idx[i][j] = b_ptr[j*bs+new_beam_idx[i][j+1]]; 
++    at::Tensor&  beam_idx,    
++    const int64_t offset,
++    const double scale_factor,
++    at::Tensor& attention_mask) {
++  RECORD_FUNCTION(
++      "ipex::scale_dot_product_for_indirect_access_kv_cache",
++      c10::ArrayRef<c10::IValue>({}));
++  int beam_batch = beam_idx.size(1);
++  auto bs = query.size(0);
++  auto cur_len = query.size(1); // only process cur_len==1
++  auto head_num = query.size(2);
++  auto kv_head = key.size(2);
++  auto group_size = head_num / kv_head;
++  auto head_size = query.size(3);
++  auto seq_len = offset + cur_len;
++  auto kc_token_stride = beam_batch * kv_head * head_size;
++  auto attn_weights =
++      at::empty({bs, head_num, cur_len, seq_len}, key.options());
++  query = query.contiguous();
++  key = key.contiguous();
++  auto q_ptr = query.data_ptr<QT>();
++  auto k_ptr = key.data_ptr<QT>();
++  auto k_cache_ptr = key_cache.data_ptr<QT>();
++  auto mask_ptr = attention_mask.data_ptr<QT>();
++  auto mask_head_num = attention_mask.size(1);
++  auto mask_dim2 = attention_mask.size(2);
++  auto mask_bs_stride = mask_head_num * mask_dim2 * seq_len;
++  // value realted
++  value = value.contiguous();
++  auto attn_outs =
++      at::empty({bs, head_num, cur_len, head_size}, value.options());
++  auto v_ptr = value.data_ptr<VT>();
++  auto v_cache_ptr = value_cache.data_ptr<VT>();
++  auto attn_out_ptr = attn_outs.data_ptr<VT>();
++
++  // beam_idx: [beam_size, offset] for every decoded token, the beam_idx is the
++  // target beam idx for the past token the target beam_idx for the input tokens
++  // are always 0 compute the offset info for the past token std::cout <<
++  // "beam_idx:" << beam_idx << std::endl;  
++  // the targe beam for the past token
++  auto new_beam_idx = std::vector<std::vector<long>>(
++      beam_batch, std::vector<long>(offset + query.size(1), 0));
++  auto b_ptr = beam_idx.data_ptr<long>();
++  if (offset > 0) {
++    // according to the last decoded token to get the target beam for the past
++    // token
++    for (int i = 0; i < bs; i++) {
++      new_beam_idx[i][offset - 1] = b_ptr[(offset - 1) * bs + i];
++      for (int j = offset - 2; j >= 0;
++           j--) { // for the token of input, the target beam is alwarys 0
++        new_beam_idx[i][j] = b_ptr[j * bs + new_beam_idx[i][j + 1]];
++      }
++    }
++  }
++// query Query embeeding with the of [beam_size*batch, cur_len, head_num,
++// head_size] key Key embeeding with the of [beam_size*batch, cur_len, head_num,
++// head_size] key_cache Cache past key embeeding with the of [past_len,
++// beam_size*batch, cur_len, head_num, head_size] Try to reshape the query to
++// [beam_size*batch, cur_len, head_size, head_num]
++#pragma omp parallel for collapse(3)
++  for (auto bi = 0; bi < bs; bi++) {
++    for (auto hi = 0; hi < head_num; hi++) {
++      // auto kv_hi = hi / group_size;
++      // e.g.,cur_len = 2, offset=3
++      // query:            t4 t5
++      // key:  t0 t1 t2 t3|t4 t5
++      // output shape (2, 5)
++      //[qk_t0 qk_t1 qk_t2 qk_t3 qk_t4 -10000.0]
++      //[qk_t0 qk_t1 qk_t2 qk_t3 qk_t4 qk_t5   ]
++      // fused div+add+softmax
++      for (auto query_ti = 0; query_ti < cur_len; query_ti++) {
++        float p[1][seq_len];
++        auto kv_hi = hi / group_size; // maping the query head to key/value head
++                                      // to support MGA/MQA
++        //printf("beam_batch: %d bi/bs: %d/%d group_size:%d hi:%d kv_hi:%d kv_head:%d \n", beam_batch, bi, bs, group_size, hi, kv_hi, kv_head); fflush(stdout);
++        auto mask_ptr_start = mask_ptr + bi * mask_bs_stride;
++        auto q_ptr_start = q_ptr +
++            (bi * cur_len + query_ti) * head_num * head_size + hi * head_size;
++        for (auto ti = 0; ti < seq_len; ti++) {
++          p[0][ti] = 0.0f;
++          auto kc_token_start = ti * kc_token_stride;
++          auto kc_t_beam_start = kc_token_start;
++          if (ti > query_ti + offset) { // only caculate the innerproduct for
++                                        // the past token and current token
++            p[0][ti] = -10000.0f;
++          } else if (ti == query_ti + offset) { // caculate the innerproduct for
++                                                // the current token and store
++                                                // the key
++            if (cur_len > 1) { // this may occur for processing the promt
++              auto beam_size = beam_batch / bs;
++              // need to store key accross beam
++              kc_t_beam_start =
++                  kc_t_beam_start + bi * beam_size * kv_head * head_size;
++            } else {
++              kc_t_beam_start = kc_t_beam_start + bi * kv_head * head_size;
++            }
++            auto kc_head_start =
++                k_cache_ptr + kc_t_beam_start + kv_hi * head_size;
++            auto k_ptr_start = k_ptr +
++                (bi * cur_len + ti - offset) * kv_head * head_size +
++                kv_hi * head_size;
++            reduce_head<QT>(
++                q_ptr_start,
++                k_ptr_start,
++                &p[0][ti],
++                head_size,
++                true,
++                kc_head_start);
++          } else { // caculate the innerproduct for the past token
++            if (ti >= offset) {
++              auto k_ptr_start = k_ptr +
++                  (bi * cur_len + ti - offset) * kv_head * head_size +
++                  kv_hi * head_size;
++              reduce_head<QT>(
++                  q_ptr_start,
++                  k_ptr_start,
++                  &p[0][ti],
++                  head_size,
++                  false,
++                  nullptr);
++            } else {
++              kc_t_beam_start =
++                  kc_t_beam_start + new_beam_idx[bi][ti] * kv_head * head_size;
++              if (cur_len > 1) {
++                auto beam_size = beam_batch / bs;
++                kc_t_beam_start =
++                    kc_t_beam_start + bi * beam_size * kv_head * head_size;
++              }
++              //printf("new_beam_idx[bi][ti]:%d \n", new_beam_idx[bi][ti]);
++              auto kc_head_start =
++                  k_cache_ptr + kc_t_beam_start + kv_hi * head_size;
++              reduce_head<QT>(
++                  q_ptr_start,
++                  kc_head_start,
++                  &p[0][ti],
++                  head_size,
++                  false,
++                  nullptr);
++            }
++          }
++          // std::cout << " " << p[0][ti];
++        }
++// std::cout << std::endl;
++// div+add+softmax
++#if defined(CPU_CAPABILITY_AVX512)
++        for (auto qi = 0; qi < 1; qi++) {
++          auto max_val = -100000.0f;
++          torch_ipex::cpu::kernel::
++              _dil_div_add_reduce_max_fusion_kernel<float, QT>(
++                  &p[qi][0],
++                  mask_ptr_start + (query_ti % mask_dim2) * seq_len,
++                  scale_factor,
++                  seq_len,
++                  &p[qi][0],
++                  max_val);
++          torch_ipex::cpu::kernel::_dil_exp_reduce_sum_fusion_kernel(
++              &p[qi][0], seq_len, &p[qi][0], max_val);
++          torch_ipex::cpu::kernel::_dil_normalization_kernel<float>(
++              &p[qi][0], max_val, seq_len, &p[qi][0]);
+         }
++#else
++        assert(
++            false &&
++            "AVX512 is required in ipex::scale_dot_product_for_indirect_access_kv_cache");
++#endif
++        // calculate weighted value and store the result to attn_outs[bs,
++        // head_num, cur_len, head_size]
++        auto attn_out_head_stride = (bi * head_num + hi) * cur_len * head_size;
++        for (auto qi = 0; qi < 1; qi++) {
++          auto attn_out_start =
++              attn_out_ptr + attn_out_head_stride + (query_ti + qi) * head_size;
++          for (auto i = 0; i < head_size; i++) {
++            attn_out_start[i] = 0.0f;
++          }
++          for (auto vi = 0; vi < seq_len; vi++) {
++            auto vc_token_start = vi * kc_token_stride;
++            if (vi == qi + query_ti + offset) { // caculate the attention values
++                                                // for the current token
++              auto vc_t_beam_start = vc_token_start;
++              if (cur_len > 1) { // this may occur for processing the promt
++                auto beam_size = beam_batch / bs;
++                // removed the redundant computation, need to store key accross
++                // beam
++                vc_t_beam_start =
++                    vc_t_beam_start + bi * beam_size * kv_head * head_size;
++              } else {
++                vc_t_beam_start = vc_t_beam_start + bi * kv_head * head_size;
++              }
++              auto v_cache_head_start =
++                  v_cache_ptr + vc_t_beam_start + kv_hi * head_size;
++              auto v_ptr_start = v_ptr +
++                  (bi * cur_len + vi - offset) * kv_head * head_size +
++                  kv_hi * head_size;
++              mul_attenion_weights_and_value_of_head<VT>(
++                  p[qi][vi],
++                  v_ptr_start,
++                  attn_out_start,
++                  head_size,
++                  true,
++                  v_cache_head_start);
++            } else if (vi < qi + query_ti + offset) { // caculate attention
++                                                      // values for the past
++                                                      // token
++              if (vi >= offset) {
++                auto v_ptr_start = v_ptr +
++                    (bi * cur_len + vi - offset) * kv_head * head_size +
++                    kv_hi * head_size;
++                mul_attenion_weights_and_value_of_head<VT>(
++                    p[qi][vi],
++                    v_ptr_start,
++                    attn_out_start,
++                    head_size,
++                    false,
++                    nullptr);
++              } else {
++                //printf("new_beam_idx[bi][vi]:%d \n", new_beam_idx[bi][vi]);
++                auto vc_t_beam_start =
++                    vc_token_start + new_beam_idx[bi][vi] * kv_head * head_size;
++                if (cur_len > 1) {
++                  auto beam_size = beam_batch / bs;
++                  // printf("beam_size:%d, kv_head: %d, head_size: %d \n",
++                  // beam_size, kv_head, head_size); fflush(stdout);
++                  vc_t_beam_start =
++                      vc_t_beam_start + bi * beam_size * kv_head * head_size;
++                }
++                auto v_cache_head_start =
++                    v_cache_ptr + vc_t_beam_start + kv_hi * head_size;
++                mul_attenion_weights_and_value_of_head<VT>(
++                    p[qi][vi],
++                    v_cache_head_start,
++                    attn_out_start,
++                    head_size,
++                    false,
++                    nullptr);
++              }
++            }
++            // std::cout << " " << p[qi][vi];
++          }
++          // std::cout << std::endl;
++        }
++      }
++      // std::cout << "p:" << p << std::endl;
+     }
+-    //std::cout << "new_beam_idx:" << new_beam_idx << std::endl;
+-    auto mask = attention_mask.has_value() ? attention_mask.value():at::zeros({bs, 1, query.size(1), key.size(1)}, query.options());
+-    assert(head_mask.has_value() == false && "Head mask is not supported in ipex::scale_dot_product_for_indirect_access_kv_cache");
+-    auto attn_outs = scale_dot_product_for_indirect_access_kv_cache<Q_T>(query, key, new_beam_idx, key_cache, offset, scale_attn, mask, value, value_cache);
+-    return {attn_outs, attn_outs, key_cache, value_cache, beam_idx};   //ToDO just return attn_weights_origin for debug    
++  }
++  return std::make_tuple(attn_outs, at::Tensor(), key_cache, value_cache, beam_idx);
+ }
+ 
+ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>  zero_copy_kv_cache_masked_multihead_self_attention_kernel_impl(
+@@ -375,77 +512,75 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>  zero_cop
+     const int64_t offset,
+     const double scale_attn,
+     const int64_t max_positions,
+-    const c10::optional<at::Tensor>& head_mask/* optional */,
+-    const c10::optional<at::Tensor>& attention_mask/* optional */) {
+-    
+-    //std::cout << "new_beam_idx:" << new_beam_idx << std::endl;
++    at::Tensor& attention_mask) {      
+     assert(key.scalar_type()==at::kBFloat16 || key.scalar_type()==at::kFloat);
+-    if (key.scalar_type() == at::kFloat && value.scalar_type() == at::kFloat) {
+-        return MaskedMHAKernel<float, float>(query, key, value, key_cache, value_cache, beam_idx, offset, scale_attn, max_positions, head_mask, attention_mask);
+-    }else if(key.scalar_type() == at::kFloat && value.scalar_type() == at::kBFloat16){
+-        return MaskedMHAKernel<float, at::BFloat16>(query, key, value, key_cache, value_cache, beam_idx, offset, scale_attn, max_positions, head_mask, attention_mask);
++    if (query.scalar_type() == at::kFloat && value.scalar_type() == at::kFloat) {
++        return scale_dot_product_for_indirect_access_kv_cache<float, float>(query, key, value, key_cache, value_cache, beam_idx, offset, scale_attn, attention_mask);
++    }else if(query.scalar_type() == at::kFloat && value.scalar_type() == at::kBFloat16){
++        return scale_dot_product_for_indirect_access_kv_cache<float, at::BFloat16>(query, key, value, key_cache, value_cache, beam_idx, offset, scale_attn, attention_mask);
+     }else if(key.scalar_type() == at::kBFloat16 && value.scalar_type() == at::kFloat){
+-        return MaskedMHAKernel<at::BFloat16, float>(query, key, value, key_cache, value_cache, beam_idx, offset, scale_attn, max_positions, head_mask, attention_mask);
++        return scale_dot_product_for_indirect_access_kv_cache<at::BFloat16, float>(query, key, value, key_cache, value_cache, beam_idx, offset, scale_attn, attention_mask);
+     }
+-    return MaskedMHAKernel<at::BFloat16, at::BFloat16>(query, key, value, key_cache, value_cache, beam_idx, offset, scale_attn, max_positions, head_mask, attention_mask);  
++    return scale_dot_product_for_indirect_access_kv_cache<at::BFloat16, at::BFloat16>(query, key, value, key_cache, value_cache, beam_idx, offset, scale_attn, attention_mask);  
+ }
+ 
+ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor> first_token_masked_mha(
+     at::Tensor query,
+     at::Tensor key,
+     at::Tensor value,
+-    const int64_t batch_size,
++    at::Tensor& key_cache,
++    at::Tensor& value_cache,
++    at::Tensor& beam_idx,
++    const int64_t beam_batch,
+     const double scale_attn,
+     int64_t max_positions,
+-    const c10::optional<at::Tensor>& head_mask/* optional */,
+-    const c10::optional<at::Tensor>& attention_mask/* optional */
++    at::Tensor attention_mask
+ ) {
+     
++    auto bs = query.size(0);
+     auto query_length = query.size(1);
+     auto key_lenght = key.size(1);
+     auto kv_head_num = key.size(2);
+     auto head_size = key.size(3);
+-    auto expand_size = batch_size / query.size(0);
+     auto casual_mask = at::full({query_length, key_lenght}, -1e6, query.options());
+     casual_mask = at::triu(casual_mask, 1);    
+     casual_mask = casual_mask.unsqueeze(0).unsqueeze(0);
++    attention_mask = attention_mask + casual_mask;
+     if(max_positions < query_length){
+         max_positions = query_length + max_positions;
+     }
+-    //allocate the kv cache buffer for the first token    
+-    auto key_cache = at::zeros({max_positions, batch_size, kv_head_num, head_size}, key.options());
+-    auto value_cache = at::zeros({max_positions, batch_size, kv_head_num, head_size}, value.options());    
+-    //key [batch_size, seq_len, kv_headm_num, head_size]
+-    for (auto i = 0; i < query.size(1); i++) {
+-        key_cache.select(0, i).copy_(key.select(1, i).repeat_interleave(expand_size, 0));
+-        value_cache.select(0, i).copy_(value.select(1, i).repeat_interleave(expand_size, 0));
++    if(key.scalar_type() != at::kBFloat16 && key.scalar_type() != at::kFloat){
++        TORCH_CHECK(false, "key and value must be float or bfloat16 to use ipex::masked_multihead_self_attention_kernel_impl");
+     }
+-    //allocate beam_idx buffer for the first token
+-    auto beam_idx = at::zeros({max_positions, batch_size}, at::kLong);
+-    //ToDo surpport MGQ/MQA
++    if (key.scalar_type() == at::kFloat) {
++      copy_key_value<float>(key_cache, key, value_cache, value, beam_batch);
++    } else {
++      copy_key_value<at::BFloat16>(
++          key_cache, key, value_cache, value, beam_batch);
++    }
++    //surpport MGQ/MQA
+     //expand the head dimensiopn of key/value to be same to the query
+     if(query.size(2) != key.size(2)){
+         auto n_req = query.size(2) / key.size(2);
+         key = key.repeat_interleave(n_req, 2);
+         value = value.repeat_interleave(n_req, 2);
+-    }    
+-    key = key.permute({0, 2, 1, 3});
+-    query = query.permute({0, 2, 1, 3});
+-    value = value.permute({0, 2, 1, 3});
+-    auto attn_weights = query.matmul(key.transpose(-1, -2));
+-    auto attn_weights_origin = attn_weights.clone();
+-    attn_weights = attn_weights.div(scale_attn);
+-    attn_weights = attn_weights + casual_mask;
+-    if (attention_mask.has_value()) {
+-        attn_weights = attn_weights + attention_mask.value();
+     }
+-    attn_weights = attn_weights.softmax(-1);
+-    if (head_mask.has_value()) {
+-        attn_weights = attn_weights * head_mask.value();
++    auto attn_weights = at::Tensor();
++    if (key.scalar_type() == at::kBFloat16) {
++        auto attn_outputs = torch_ipex::cpu::flash_attention_kernel_stub(kCPU, query, key, value, scale_attn, attention_mask);
++        return std::make_tuple(attn_outputs, attn_weights, key_cache, value_cache, beam_idx);
++    } else {
++        key = key.permute({0, 2, 1, 3});
++        query = query.permute({0, 2, 1, 3});
++        value = value.permute({0, 2, 1, 3});
++        auto attn_weights = query.matmul(key.transpose(-1, -2));
++        attn_weights = attn_weights.div(scale_attn);
++        attn_weights = attn_weights + attention_mask;
++        attn_weights = attn_weights.softmax(-1);
++        attn_weights = attn_weights.to(value.dtype());
++        auto attn_outputs = attn_weights.matmul(value);
++        return std::make_tuple(attn_outputs, attn_weights, key_cache, value_cache, beam_idx);
+     }
+-    attn_weights = attn_weights.to(value.dtype());
+-    auto attn_outputs = attn_weights.matmul(value);
+-    return std::make_tuple(attn_outputs, attn_weights, key_cache, value_cache, beam_idx);
+ }
+ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>  masked_multihead_self_attention_kernel_impl(
+     at::Tensor query,
+@@ -459,31 +594,97 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>  masked_m
+     int64_t max_positions,
+     const c10::optional<at::Tensor>& head_mask/* optional */,
+     const c10::optional<at::Tensor>& attention_mask/* optional */) {  
+-    auto bs = beam_idx.size(1);//need to prepare the fake beam_idx as (max_position, bs) for the first token      
++    if(attention_mask.has_value() == false){
++        TORCH_CHECK(false, "Attention mask is neccessary for ipex::masked_multihead_self_attention_kernel_impl");
++    }
++    if(attention_mask.value().dim() != 4){
++        TORCH_CHECK(false, "Attention mask must be 4D for ipex::masked_multihead_self_attention_kernel_impl");
++    }
++    if(head_mask.has_value() == true){
++        TORCH_CHECK(false, "Head mask is not supported in ipex::masked_multihead_self_attention_kernel_impl");
++    }
++    if (query.dtype() != key.dtype()) {
++        TORCH_CHECK(false, "query and key must have the same data type to use ipex::masked_multihead_self_attention_kernel_impl");
++    }
++    query = query.contiguous();
++    key = key.contiguous();
++    value = value.contiguous();
++    auto attention_mask_v = attention_mask.value().contiguous();
++    attention_mask_v = attention_mask_v.to(query.dtype());
++    auto beam_batch = beam_idx.size(1);//need to prepare the fake beam_idx as (max_position, bs) for the first token      
+     auto offset = seq_info.data_ptr<long>()[0];
+     auto cache_size = key_cache.size(0);
+     auto cur_len = query.size(1);
+-    if(offset > 0 && offset + cur_len > cache_size) {
+-        auto new_cache_size = cache_size * 2;
+-        auto new_key_cache = at::zeros({new_cache_size, bs, key.size(2), key.size(3)}, key.options());
+-        auto new_value_cache = at::zeros({new_cache_size, bs, value.size(2), value.size(3)}, value.options());
+-        auto new_beam_idx = at::zeros({new_cache_size, bs}, beam_idx.options());
+-        new_key_cache.slice(0, 0, cache_size).copy_(key_cache);
+-        new_value_cache.slice(0, 0, cache_size).copy_(value_cache);
+-        new_beam_idx.slice(0, 0, cache_size).copy_(beam_idx);
+-        key_cache = new_key_cache;
+-        value_cache = new_value_cache;
+-        beam_idx = new_beam_idx;
++    if (offset == 0) {
++      max_positions =
++          max_positions > cur_len ? max_positions : max_positions + cur_len;
++      key_cache = at::empty(
++          {max_positions, beam_batch, key.size(2), key.size(3)}, key.options());
++      value_cache = at::empty(
++          {max_positions, beam_batch, value.size(2), value.size(3)}, value.options());
++      beam_idx = at::zeros({max_positions, beam_batch}, beam_idx.options());
++      auto beam_idx_access = beam_idx.accessor<long, 2>();
++      for (auto i = 0; i < max_positions; i++){
++          for (auto j = 0; j < beam_batch; j++){
++              if(key.size(0) == beam_batch){
++                 beam_idx_access[i][j] = j;
++              }else{
++                 auto beam_size = beam_batch / key.size(0);
++                 beam_idx_access[i][j] = j / beam_size * beam_size;
++              }
++            }
++       }
++    } else if (offset > 0 && offset + cur_len > cache_size) {
++      auto new_cache_size = cache_size * 2;
++      auto new_key_cache = at::zeros(
++          {new_cache_size, beam_batch, key.size(2), key.size(3)}, key.options());
++      auto new_value_cache = at::zeros(
++          {new_cache_size, beam_batch, value.size(2), value.size(3)}, value.options());
++      auto new_beam_idx = at::zeros({new_cache_size, beam_batch}, beam_idx.options());
++      new_key_cache.slice(0, 0, cache_size).copy_(key_cache);
++      new_value_cache.slice(0, 0, cache_size).copy_(value_cache);
++      new_beam_idx.slice(0, 0, cache_size).copy_(beam_idx);
++      for (auto i = offset; i < new_cache_size; i++){
++          for (auto j = 0; j < beam_batch; j++){
++              if(key.size(0) == beam_batch){
++                 new_beam_idx[i][j] = j;
++              }else{
++                 auto beam_size = beam_batch / key.size(0);
++                 new_beam_idx[i][j] = j / beam_size * beam_size;
++              }
++            }
++      }
++      key_cache = new_key_cache;
++      value_cache = new_value_cache;
++      beam_idx = new_beam_idx;
+     }
+     if(offset > 0){
+-        return zero_copy_kv_cache_masked_multihead_self_attention_kernel_impl(query, key, value, key_cache, value_cache, beam_idx, offset, scale_attn, max_positions, head_mask, attention_mask);
++      return zero_copy_kv_cache_masked_multihead_self_attention_kernel_impl(
++          query,
++          key,
++          value,
++          key_cache,
++          value_cache,
++          beam_idx,
++          offset,
++          scale_attn,
++          max_positions,
++          attention_mask_v);
+     }else{
+-        return first_token_masked_mha(query, key, value, bs, scale_attn, max_positions, head_mask, attention_mask);
++      return first_token_masked_mha(
++          query,
++          key,
++          value,
++          key_cache,
++          value_cache,
++          beam_idx,
++          beam_batch,
++          scale_attn,
++          max_positions,
++          attention_mask_v);
+     }
+     
+ }
+-
+-
+ } // anonymous namespace
+ 
+ REGISTER_DISPATCH(masked_multihead_self_attention_kernel_stub, &masked_multihead_self_attention_kernel_impl);
+diff --git a/csrc/cpu/aten/kernels/TPPGEMMKrnl.cpp b/csrc/cpu/aten/kernels/TPPGEMMKrnl.cpp
+index 733dd48a..d70ac1f7 100644
+--- a/csrc/cpu/aten/kernels/TPPGEMMKrnl.cpp
++++ b/csrc/cpu/aten/kernels/TPPGEMMKrnl.cpp
+@@ -12,7 +12,7 @@ namespace cpu {
+ 
+ namespace {
+ 
+-at::Tensor fc_plain_kernel_impl(
++at::Tensor tpp_linear_bias_kernel_impl(
+     at::Tensor& t_in,
+     at::Tensor& t_wt,
+     at::Tensor& t_bias) {
+@@ -21,41 +21,70 @@ at::Tensor fc_plain_kernel_impl(
+   sizes[2] = wt_sizes[0] * wt_sizes[3];
+ 
+   auto t_out = t_in.new_empty(sizes);
+-  // std::cout << "YYY " << t_out.dtype() << "  " << t_in.dtype() << std::endl;
+   auto dt = t_wt.dtype();
+   if (dt == at::kFloat) {
+-    torch_ipex::tpp::fc_plain<float>(t_in, t_wt, t_bias, t_out);
++    torch_ipex::tpp::tpp_linear_bias<float>(t_in, t_wt, t_bias, t_out);
+   } else if (dt == at::kBFloat16) {
+-    torch_ipex::tpp::fc_plain<at::BFloat16>(t_in, t_wt, t_bias, t_out);
++    torch_ipex::tpp::tpp_linear_bias<at::BFloat16>(t_in, t_wt, t_bias, t_out);
+   } else {
+-    AT_ASSERT(0, "Should not come here %s:%d\n", __FILE__, __LINE__);
++    AT_ASSERT(
++        0,
++        "TPP does not support current weight dtype %s:%d\n",
++        __FILE__,
++        __LINE__);
+   }
+ 
+   return t_out;
+ }
+ 
+-at::Tensor fc_out_kernel_impl(
++at::Tensor tpp_linear_nobias_kernel_impl(at::Tensor& t_in, at::Tensor& t_wt) {
++  auto sizes = t_in.sizes().vec();
++  auto wt_sizes = t_wt.sizes();
++  sizes[2] = wt_sizes[0] * wt_sizes[3];
++
++  auto t_out = t_in.new_empty(sizes);
++
++  auto dt = t_wt.dtype();
++  if (dt == at::kFloat) {
++    torch_ipex::tpp::tpp_linear_no_bias<float>(t_in, t_wt, t_out);
++  } else if (dt == at::kBFloat16) {
++    torch_ipex::tpp::tpp_linear_no_bias<at::BFloat16>(t_in, t_wt, t_out);
++  } else {
++    AT_ASSERT(
++        0,
++        "TPP does not support current weight dtype %s:%d\n",
++        __FILE__,
++        __LINE__);
++  }
++  return t_out;
++}
++
++at::Tensor tpp_linear_gelu_kernel_impl(
+     at::Tensor& t_in,
+-    at::Tensor& t_in1,
+-    at::Tensor& t_in2,
+     at::Tensor& t_wt,
+-    at::Tensor& t_bias,
+-    double scale) {
+-  auto t_out = at::empty_like(t_in1);
++    at::Tensor& t_bias) {
++  auto sizes = t_in.sizes().vec();
++  auto wt_sizes = t_wt.sizes();
++  sizes[2] = wt_sizes[0] * wt_sizes[3];
++
++  auto t_out = t_in.new_empty(sizes);
++
+   auto dt = t_wt.dtype();
+   if (dt == at::kFloat) {
+-    torch_ipex::tpp::fc_out<float>(
+-        t_in, t_in1, t_in2, t_wt, t_bias, t_out, scale);
++    torch_ipex::tpp::tpp_linear_gelu<float>(t_in, t_wt, t_bias, t_out);
+   } else if (dt == at::kBFloat16) {
+-    torch_ipex::tpp::fc_out<at::BFloat16>(
+-        t_in, t_in1, t_in2, t_wt, t_bias, t_out, scale);
++    torch_ipex::tpp::tpp_linear_gelu<at::BFloat16>(t_in, t_wt, t_bias, t_out);
+   } else {
+-    AT_ASSERT(0, "Should not come here %s:%d\n", __FILE__, __LINE__);
++    AT_ASSERT(
++        0,
++        "TPP does not support current weight dtype %s:%d\n",
++        __FILE__,
++        __LINE__);
+   }
+   return t_out;
+ }
+ 
+-at::Tensor fc_in_kernel_impl(
++at::Tensor tpp_linear_silu_kernel_impl(
+     at::Tensor& t_in,
+     at::Tensor& t_wt,
+     at::Tensor& t_bias) {
+@@ -67,16 +96,23 @@ at::Tensor fc_in_kernel_impl(
+ 
+   auto dt = t_wt.dtype();
+   if (dt == at::kFloat) {
+-    torch_ipex::tpp::fc_in<float>(t_in, t_wt, t_bias, t_out);
++    torch_ipex::tpp::tpp_linear_silu<float>(t_in, t_wt, t_bias, t_out);
+   } else if (dt == at::kBFloat16) {
+-    torch_ipex::tpp::fc_in<at::BFloat16>(t_in, t_wt, t_bias, t_out);
++    torch_ipex::tpp::tpp_linear_silu<at::BFloat16>(t_in, t_wt, t_bias, t_out);
+   } else {
+-    AT_ASSERT(0, "Should not come here %s:%d\n", __FILE__, __LINE__);
++    AT_ASSERT(
++        0,
++        "TPP does not support current weight dtype %s:%d\n",
++        __FILE__,
++        __LINE__);
+   }
+   return t_out;
+ }
+ 
+-at::Tensor qkv_kernel_impl(at::Tensor& t_in, at::Tensor& t_wt) {
++at::Tensor tpp_linear_relu_kernel_impl(
++    at::Tensor& t_in,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias) {
+   auto sizes = t_in.sizes().vec();
+   auto wt_sizes = t_wt.sizes();
+   sizes[2] = wt_sizes[0] * wt_sizes[3];
+@@ -85,20 +121,103 @@ at::Tensor qkv_kernel_impl(at::Tensor& t_in, at::Tensor& t_wt) {
+ 
+   auto dt = t_wt.dtype();
+   if (dt == at::kFloat) {
+-    torch_ipex::tpp::qkv_gemm<float>(t_in, t_wt, t_out);
++    torch_ipex::tpp::tpp_linear_relu<float>(t_in, t_wt, t_bias, t_out);
++  } else if (dt == at::kBFloat16) {
++    torch_ipex::tpp::tpp_linear_relu<at::BFloat16>(t_in, t_wt, t_bias, t_out);
++  } else {
++    AT_ASSERT(
++        0,
++        "TPP does not support current weight dtype %s:%d\n",
++        __FILE__,
++        __LINE__);
++  }
++  return t_out;
++}
++
++at::Tensor tpp_linear_add_add_kernel_impl(
++    at::Tensor& t_in,
++    at::Tensor& t_in1,
++    at::Tensor& t_in2,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias,
++    double scale) {
++  auto t_out = at::empty_like(t_in1);
++  auto dt = t_wt.dtype();
++  if (dt == at::kFloat) {
++    torch_ipex::tpp::tpp_linear_add_add<float>(
++        t_in, t_in1, t_in2, t_wt, t_bias, t_out, scale);
++  } else if (dt == at::kBFloat16) {
++    torch_ipex::tpp::tpp_linear_add_add<at::BFloat16>(
++        t_in, t_in1, t_in2, t_wt, t_bias, t_out, scale);
++  } else {
++    AT_ASSERT(
++        0,
++        "TPP does not support current weight dtype %s:%d\n",
++        __FILE__,
++        __LINE__);
++  }
++  return t_out;
++}
++
++at::Tensor tpp_linear_add_kernel_impl(
++    at::Tensor& t_in,
++    at::Tensor& t_in1,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias,
++    double scale) {
++  auto t_out = at::empty_like(t_in1);
++  auto dt = t_wt.dtype();
++  if (dt == at::kFloat) {
++    torch_ipex::tpp::tpp_linear_add<float>(
++        t_in, t_in1, t_wt, t_bias, t_out, scale);
++  } else if (dt == at::kBFloat16) {
++    torch_ipex::tpp::tpp_linear_add<at::BFloat16>(
++        t_in, t_in1, t_wt, t_bias, t_out, scale);
++  } else {
++    AT_ASSERT(
++        0,
++        "TPP does not support current weight dtype %s:%d\n",
++        __FILE__,
++        __LINE__);
++  }
++  return t_out;
++}
++
++at::Tensor tpp_linear_mul_kernel_impl(
++    at::Tensor& t_in,
++    at::Tensor& t_in1,
++    at::Tensor& t_wt,
++    at::Tensor& t_bias) {
++  auto t_out = at::empty_like(t_in1);
++  auto dt = t_wt.dtype();
++  if (dt == at::kFloat) {
++    torch_ipex::tpp::tpp_linear_mul<float>(t_in, t_in1, t_wt, t_bias, t_out);
+   } else if (dt == at::kBFloat16) {
+-    torch_ipex::tpp::qkv_gemm<at::BFloat16>(t_in, t_wt, t_out);
++    torch_ipex::tpp::tpp_linear_mul<at::BFloat16>(
++        t_in, t_in1, t_wt, t_bias, t_out);
+   } else {
+-    AT_ASSERT(0, "Should not come here %s:%d\n", __FILE__, __LINE__);
++    AT_ASSERT(
++        0,
++        "TPP does not support current weight dtype %s:%d\n",
++        __FILE__,
++        __LINE__);
+   }
+   return t_out;
+ }
+ 
+ } // namespace
+ 
+-REGISTER_DISPATCH(fc_plain_kernel_stub, &fc_plain_kernel_impl);
+-REGISTER_DISPATCH(fc_in_kernel_stub, &fc_in_kernel_impl);
+-REGISTER_DISPATCH(fc_out_kernel_stub, &fc_out_kernel_impl);
+-REGISTER_DISPATCH(qkv_kernel_stub, &qkv_kernel_impl);
++REGISTER_DISPATCH(
++    tpp_linear_nobias_kernel_stub,
++    &tpp_linear_nobias_kernel_impl);
++REGISTER_DISPATCH(tpp_linear_bias_kernel_stub, &tpp_linear_bias_kernel_impl);
++REGISTER_DISPATCH(tpp_linear_gelu_kernel_stub, &tpp_linear_gelu_kernel_impl);
++REGISTER_DISPATCH(tpp_linear_relu_kernel_stub, &tpp_linear_relu_kernel_impl);
++REGISTER_DISPATCH(tpp_linear_silu_kernel_stub, &tpp_linear_silu_kernel_impl);
++REGISTER_DISPATCH(tpp_linear_mul_kernel_stub, &tpp_linear_mul_kernel_impl);
++REGISTER_DISPATCH(tpp_linear_add_kernel_stub, &tpp_linear_add_kernel_impl);
++REGISTER_DISPATCH(
++    tpp_linear_add_add_kernel_stub,
++    &tpp_linear_add_add_kernel_impl);
+ } // namespace cpu
+ } // namespace torch_ipex
+diff --git a/csrc/cpu/jit/fusion_pass.cpp b/csrc/cpu/jit/fusion_pass.cpp
+index a9699203..fee1cf3e 100644
+--- a/csrc/cpu/jit/fusion_pass.cpp
++++ b/csrc/cpu/jit/fusion_pass.cpp
+@@ -195,6 +195,8 @@ void IPEXFusionPass(std::shared_ptr<Graph>& graph) {
+   graph_rewrite::replaceAtenBatchNormWithIpexBatchNorm(graph);
+   // TODO: Some post processing?? ECS/EDC/Peephole???
+ 
++  graph_rewrite::simplifyAllReduce(graph);
++
+   // This path contains two functions:
+   // 1. Fuse BF16 Mha for ViT because ViT has a special QKV split algorithm
+   // 2. Replace the Matmul OP with MKL or DNNL Matmul kernels to enable
+diff --git a/csrc/cpu/jit/passes/graph_rewrite.cpp b/csrc/cpu/jit/passes/graph_rewrite.cpp
+index 1730e583..7619279e 100644
+--- a/csrc/cpu/jit/passes/graph_rewrite.cpp
++++ b/csrc/cpu/jit/passes/graph_rewrite.cpp
+@@ -1239,6 +1239,58 @@ void replaceAtenMaxPool2dWithIpexMaxPool2d(std::shared_ptr<Graph>& graph) {
+   rewriter_max_pool2d.runOnGraph(graph, filter);
+ }
+ 
++void simplifyAllReduce(std::shared_ptr<Graph>& graph) {
++  std::string all_reduce_v1 = R"(
++    graph(%a, %weight, %reduceop, %tag, %ranks, %group_size, %b, %fc_in_weight, %fc_in_bias, %fc_out_weight, %fc_out_bias, %alpha, %idx, %no, %dtype, %zero):
++      %r1 = torch_ipex::tpp_linear(%a, %weight)
++      %r2 = deepspeed_comm::all_reduce(%r1, %reduceop, %tag, %ranks, %group_size)
++      %r3 = torch_ipex::tpp_linear_gelu(%b, %fc_in_weight, %fc_in_bias)
++      %r4 = aten::to(%r3, %idx, %no, %no, %dtype)
++      %r5 = aten::contiguous(%r4, %zero)
++      %r6 = torch_ipex::tpp_linear(%r5, %fc_out_weight)
++      %r7 = deepspeed_comm::all_reduce(%r6, %reduceop, %tag, %ranks, %group_size)
++      %r8 = aten::add_(%r7, %fc_out_bias, %alpha)
++      %r = aten::add(%r2, %r8, %alpha)
++      return (%r) )";
++  std::string all_reduce_repl_v1 = R"(
++    graph(%a, %weight, %reduceop, %tag, %ranks, %group_size, %b, %fc_in_weight, %fc_in_bias, %fc_out_weight, %fc_out_bias, %alpha, %idx, %no, %dtype, %zero):
++      %r1 = torch_ipex::tpp_linear(%a, %weight)
++      %r2 = torch_ipex::tpp_linear_gelu(%b, %fc_in_weight, %fc_in_bias)
++      %r3 = aten::to(%r2, %idx, %no, %no, %dtype)
++      %r4 = aten::contiguous(%r3, %zero)
++      %r5 = torch_ipex::tpp_linear(%r4, %fc_out_weight)
++      %r6 = aten::add(%r1, %r5, %alpha)
++      %r7 = deepspeed_comm::all_reduce(%r6, %reduceop, %tag, %ranks, %group_size)
++      %r = aten::add_(%r7, %fc_out_bias, %alpha)
++      return (%r) )";
++
++  std::string all_reduce_v2 = R"(
++    graph(%a, %weight, %reduceop, %tag, %ranks, %group_size, %b, %fc_in_weight, %fc_in_bias, %fc_out_weight, %fc_out_bias, %alpha):
++      %r1 = ipex_prepack::linear_run(%a, %weight)
++      %r2 = deepspeed_comm::all_reduce(%r1, %reduceop, %tag, %ranks, %group_size)
++      %r3 = ipex_prepack::linear_gelu_run(%b, %fc_in_weight, %fc_in_bias)
++      %r4 = ipex_prepack::linear_run(%r3, %fc_out_weight)
++      %r5 = deepspeed_comm::all_reduce(%r4, %reduceop, %tag, %ranks, %group_size)
++      %r6 = aten::add_(%r5, %fc_out_bias, %alpha)
++      %r = aten::add(%r2, %r6, %alpha)
++      return (%r) )";
++  std::string all_reduce_repl_v2 = R"(
++    graph(%a, %weight, %reduceop, %tag, %ranks, %group_size, %b, %fc_in_weight, %fc_in_bias, %fc_out_weight, %fc_out_bias, %alpha):
++      %r1 = ipex_prepack::linear_run(%a, %weight)
++      %r2 = ipex_prepack::linear_gelu_run(%b, %fc_in_weight, %fc_in_bias)
++      %r3 = ipex_prepack::linear_run(%r2, %fc_out_weight)
++      %r4 = aten::add(%r1, %r3, %alpha)
++      %r5 = deepspeed_comm::all_reduce(%r4, %reduceop, %tag, %ranks, %group_size)
++      %r = aten::add_(%r5, %fc_out_bias, %alpha)
++      return (%r) )";
++
++  SubgraphRewriter rewriter_v1, rewriter_v2;
++  rewriter_v1.RegisterRewritePattern(all_reduce_v1, all_reduce_repl_v1);
++  rewriter_v2.RegisterRewritePattern(all_reduce_v2, all_reduce_repl_v2);
++  rewriter_v1.runOnGraph(graph);
++  rewriter_v2.runOnGraph(graph);
++}
++
+ } // namespace graph_rewrite
+ } // namespace jit
+ } // namespace torch_ipex
+diff --git a/csrc/cpu/jit/passes/graph_rewrite.h b/csrc/cpu/jit/passes/graph_rewrite.h
+index 40b6cf24..1ac98431 100644
+--- a/csrc/cpu/jit/passes/graph_rewrite.h
++++ b/csrc/cpu/jit/passes/graph_rewrite.h
+@@ -38,7 +38,7 @@ void replaceInteractionWithQInteraction(
+ void preprocessSizeForQLstm(std::shared_ptr<torch::jit::Graph>& graph);
+ void replaceLstmWithQLstm(std::shared_ptr<torch::jit::Graph>& graph);
+ void replaceAddWithQAdd(std::shared_ptr<torch::jit::Graph>& graph);
+-
++void simplifyAllReduce(std::shared_ptr<torch::jit::Graph>& graph);
+ void replaceFrozenIPEXConvWithAtenConv(
+     std::shared_ptr<torch::jit::Graph>& graph);
+ void replaceFrozenIPEXLinearWithAtenLinear(
+diff --git a/csrc/cpu/tpp/kernels/TPPGEMMKrnl.h b/csrc/cpu/tpp/kernels/TPPGEMMKrnl.h
+index 8a7a75e6..43d1bdb8 100644
+--- a/csrc/cpu/tpp/kernels/TPPGEMMKrnl.h
++++ b/csrc/cpu/tpp/kernels/TPPGEMMKrnl.h
+@@ -23,16 +23,85 @@ static int NCB_BLOCK_SIZE = env2int("NCB_BLOCK_SIZE", 64);
+ static const char* GEMM_LOOP_SCHEME =
+     getenv("GEMM_LOOP_SCHEME") ? getenv("GEMM_LOOP_SCHEME") : "aCB";
+ 
+-REGISTER_LOCAL_SCOPE(pln_gemm, "pln_gemm"); // linear bias
+-REGISTER_LOCAL_SCOPE(qkv_gemm, "qkv_gemm"); //  linear no bias
+-
+-REGISTER_LOCAL_SCOPE(o_gemm, "o_gemm"); // linear bias + add + add
+-REGISTER_LOCAL_SCOPE(i_gemm, "i_gemm"); // linear bias + gelu
++REGISTER_LOCAL_SCOPE(
++    tpp_linear_krnl,
++    "tpp_linear_krnl"); //  linear W/ and W/O bias
++REGISTER_LOCAL_SCOPE(
++    tpp_linear_add_add_krnl,
++    "tpp_linear_add_add_krnl"); // linear bias + add + add
++REGISTER_LOCAL_SCOPE(
++    tpp_linear_gelu_krnl,
++    "tpp_linear_gelu_krnl"); // linear bias + gelu
++
++REGISTER_LOCAL_SCOPE(
++    tpp_linear_mul_krnl,
++    "tpp_linear_mul_krnl"); // linear bias + mul
++REGISTER_LOCAL_SCOPE(
++    tpp_linear_add_krnl,
++    "tpp_linear_add_krnl"); // linear bias + add
++REGISTER_LOCAL_SCOPE(
++    tpp_linear_silu_krnl,
++    "tpp_linear_silu_krnl"); // linear bias + silu
++REGISTER_LOCAL_SCOPE(
++    tpp_linear_relu_krnl,
++    "tpp_linear_relu_krnl"); // linear bias + relu
+ 
+ REGISTER_LOCAL_SCOPE(fftkn, "fftkn");
+ 
+ template <typename T>
+-inline void fc_plain(
++inline at::Tensor wt_tensor_for_first_token(at::Tensor& t) {
++  RECORD_SCOPE(fftkn, {t});
++  auto dim = t.dim();
++  if (dim < 5)
++    return t;
++  auto sizes = t.sizes();
++  constexpr long RBS = 2;
++  auto K1 = sizes[0];
++  if (K1 % RBS != 0)
++    return t;
++  auto C1 = sizes[1];
++  auto C2 = sizes[2];
++  auto K2 = sizes[3];
++  auto C3 = sizes[4];
++#if 0
++  auto t_new = t.view({K1/RBS, RBS, C1, C2, K2, C3}).permute({0, 2, 3, 1, 4, 5}).contiguous().view({K1/RBS, C1, C2, RBS*K2, C3});
++#else
++  auto t_new = t.new_empty({K1 / RBS, C1, C2, RBS * K2, C3});
++  auto in = GetVLAPtr<T>(t, {RBS, C1, C2, K2 * C3});
++  auto out = GetVLAPtr<T>(t_new, {C1, C2, RBS, K2 * C3});
++
++#if 1
++  auto cpy_tpp =
++      SCOPEIT(CpyTPP<T>(C2, K2 * C3, K2 * C3, RBS * K2 * C3), EW_COPY);
++
++#pragma omp parallel for collapse(2)
++  for (int i = 0; i < K1 / RBS; i++) {
++    for (int j = 0; j < C1; j++) {
++      for (int k = 0; k < RBS; k++) {
++        cpy_tpp(in[i][k][j][0], out[i][j][0][k]);
++      }
++    }
++  }
++#else
++  auto cpy_tpp =
++      SCOPEIT(CpyTPP<T>(RBS, K2 * C3, C1 * C2 * K2 * C3, K2 * C3), EW_COPY);
++
++#pragma omp parallel for collapse(2)
++  for (int i = 0; i < K1 / RBS; i++) {
++    for (int j = 0; j < C1; j++) {
++      for (int k = 0; k < C2; k++) {
++        cpy_tpp(in[i][0][j][k], out[i][j][k][0]);
++      }
++    }
++  }
++#endif
++
++#endif
++  return t_new;
++}
++
++template <typename T>
++inline void tpp_linear_bias(
+     at::Tensor& t_in,
+     at::Tensor& t_wt,
+     at::Tensor& t_bias,
+@@ -78,7 +147,7 @@ inline void fc_plain(
+       (BrgemmTPP<T, T>(rem, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
+ 
+   {
+-    RECORD_SCOPE(pln_gemm, {t_in, t_wt_V});
++    RECORD_SCOPE(tpp_linear_krnl, {t_in, t_wt_V});
+     // auto loop_scheme = large_cache_opt ? "acB" : "aBC";
+     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+     auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
+@@ -114,60 +183,164 @@ inline void fc_plain(
+   }
+ }
+ 
+-template <typename T>
+-inline at::Tensor wt_tensor_for_first_token(at::Tensor& t) {
+-  RECORD_SCOPE(fftkn, {t});
+-  auto dim = t.dim();
+-  if (dim < 5)
+-    return t;
+-  auto sizes = t.sizes();
+-  constexpr long RBS = 2;
+-  auto K1 = sizes[0];
+-  if (K1 % RBS != 0)
+-    return t;
+-  auto C1 = sizes[1];
+-  auto C2 = sizes[2];
+-  auto K2 = sizes[3];
+-  auto C3 = sizes[4];
+-#if 0
+-  auto t_new = t.view({K1/RBS, RBS, C1, C2, K2, C3}).permute({0, 2, 3, 1, 4, 5}).contiguous().view({K1/RBS, C1, C2, RBS*K2, C3});
+-#else
+-  auto t_new = t.new_empty({K1 / RBS, C1, C2, RBS * K2, C3});
+-  auto in = GetVLAPtr<T>(t, {RBS, C1, C2, K2 * C3});
+-  auto out = GetVLAPtr<T>(t_new, {C1, C2, RBS, K2 * C3});
++template <typename T, typename Tout = T>
++inline void tpp_linear_no_bias(
++    at::Tensor& t_in,
++    at::Tensor& t_wt,
++    at::Tensor& t_out) {
++  auto in_sizes = t_in.sizes();
++  auto BS = in_sizes[0] * in_sizes[1];
++  if (BS > FT_OPT_SIZE) { // first token compute
++    t_wt = wt_tensor_for_first_token<T>(t_wt);
++  }
++  auto wt_sizes = t_wt.sizes();
++  auto C = in_sizes[2];
+ 
+-#if 1
+-  auto cpy_tpp =
+-      SCOPEIT(CpyTPP<T>(C2, K2 * C3, K2 * C3, RBS * K2 * C3), EW_COPY);
++  auto Nc = wt_sizes[1];
++  auto Hc = C / Nc;
++  auto Nk = wt_sizes[0];
++  auto Hk = wt_sizes[3];
++  auto K = Nk * Hk;
++  auto t_wt_V = torch_ipex::tpp::wt_tensor_for_fwd(Nk, Hk, Nc, Hc, t_wt);
+ 
+-#pragma omp parallel for collapse(2)
+-  for (int i = 0; i < K1 / RBS; i++) {
+-    for (int j = 0; j < C1; j++) {
+-      for (int k = 0; k < RBS; k++) {
+-        cpy_tpp(in[i][k][j][0], out[i][j][0][k]);
+-      }
+-    }
++  auto in = GetVLAPtr<T>(t_in, {Nc, Hc});
++  auto wt_V = GetVLAPtr<T>(t_wt_V, {Nc, Hc * Hk});
++  auto out = GetVLAPtr<Tout>(t_out, {Nk, Hk});
++
++  auto Ncb = Nc;
++  auto BSb = 64L;
++  auto rem = BS % BSb;
++  if (large_cache_opt)
++    Ncb = NCB_BLOCK_SIZE;
++
++  auto zero_tpp = SCOPEIT(SetZeroTPP<Tout>(BSb, Hk, K), EW_ZERO);
++  auto zero_tpp_rem = SCOPEIT(SetZeroTPP<Tout>(rem, Hk, K), EW_ZERO);
++  auto brgemm_tpp = SCOPEITGEMM(
++      (BrgemmTPP<T, Tout>(BSb, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
++  auto brgemm_tpp_rem = SCOPEITGEMM(
++      (BrgemmTPP<T, Tout>(rem, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
++
++  {
++    RECORD_SCOPE(tpp_linear_krnl, {t_in, t_wt_V});
++    // auto loop_scheme = large_cache_opt ? "acB" : "aBC";
++    auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
++    auto gemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
++        {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
++    gemm_loop(
++        [&](int* ind) {
++          int nc = ind[0], s1 = ind[1], nk = ind[2];
++          auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
++          bool is_rem = (s1 + BSb > BS);
++          if (!is_rem) {
++            if (nc == 0) {
++              zero_tpp(out[s1][nk]);
++            }
++            brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
++          } else {
++            if (nc == 0) {
++              zero_tpp_rem(out[s1][nk]);
++            }
++            brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
++            brgemm_tpp.config();
++          }
++        },
++        [&]() { brgemm_tpp.config(); },
++        [&]() { brgemm_tpp.release(); });
+   }
+-#else
+-  auto cpy_tpp =
+-      SCOPEIT(CpyTPP<T>(RBS, K2 * C3, C1 * C2 * K2 * C3, K2 * C3), EW_COPY);
++}
+ 
+-#pragma omp parallel for collapse(2)
+-  for (int i = 0; i < K1 / RBS; i++) {
+-    for (int j = 0; j < C1; j++) {
+-      for (int k = 0; k < C2; k++) {
+-        cpy_tpp(in[i][0][j][k], out[i][j][k][0]);
+-      }
+-    }
++template <typename T>
++inline void tpp_linear_mul(
++    at::Tensor t_in,
++    at::Tensor t_in1,
++    at::Tensor t_wt,
++    at::Tensor t_bias,
++    at::Tensor t_out) {
++  auto in_sizes = t_in.sizes();
++  auto BS = in_sizes[0] * in_sizes[1];
++  if (BS > FT_OPT_SIZE) { // first token compute
++    t_wt = wt_tensor_for_first_token<T>(t_wt);
+   }
+-#endif
++  auto wt_sizes = t_wt.sizes();
++  auto C = in_sizes[2];
+ 
+-#endif
+-  return t_new;
++  auto Nc = wt_sizes[1];
++  auto Hc = C / Nc;
++  auto Nk = wt_sizes[0];
++  auto Hk = wt_sizes[3];
++  auto K = Nk * Hk;
++
++  auto t_wt_V = torch_ipex::tpp::wt_tensor_for_fwd(Nk, Hk, Nc, Hc, t_wt);
++
++  auto in = GetVLAPtr<T>(t_in, {Nc, Hc});
++  auto in1 = GetVLAPtr<T>(t_in1, {Nk, Hk});
++  auto wt_V = GetVLAPtr<T>(t_wt_V, {Nc, Hc * Hk});
++  auto bias = GetVLAPtr<T>(t_bias, {Hk});
++  auto out = GetVLAPtr<T>(t_out, {Nk, Hk});
++
++  auto Ncb = Nc;
++  auto BSb = 64L;
++  auto rem = BS % 64;
++  if (large_cache_opt)
++    Ncb = NCB_BLOCK_SIZE;
++
++  bool with_bias = (t_bias.numel() > 0);
++  auto copy_bias_tpp = SCOPEIT(CpyBiasTPP<T>(BSb, Hk, K), BIAS);
++  auto copy_bias_tpp_rem = SCOPEIT(CpyBiasTPP<T>(rem, Hk, K), BIAS);
++  auto zero_tpp = SCOPEIT(SetZeroTPP<T>(BSb, Hk, K), EW_ZERO);
++  auto zero_tpp_rem = SCOPEIT(SetZeroTPP<T>(rem, Hk, K), EW_ZERO);
++  auto brgemm_tpp = SCOPEITGEMM(
++      (BrgemmTPP<T, T>(BSb, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
++  auto brgemm_tpp_rem = SCOPEITGEMM(
++      (BrgemmTPP<T, T>(rem, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
++  auto mul_tpp = SCOPEIT((MulTPP<T, T>(BSb, Hk, K, K)), EW_MUL);
++  auto mul_tpp_rem = SCOPEIT((MulTPP<T, T>(rem, Hk, K, K)), EW_MUL);
++
++  {
++    RECORD_SCOPE(tpp_linear_mul_krnl, {t_in, t_wt_V});
++    // auto loop_scheme = large_cache_opt ? "acB" : "aBC";
++    auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
++    auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
++        {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
++    ogemm_loop(
++        [&](int* ind) {
++          int nc = ind[0], s1 = ind[1], nk = ind[2];
++          auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
++          bool is_rem = (s1 + BSb > BS);
++          if (!is_rem) {
++            if (nc == 0) {
++              if (with_bias) {
++                copy_bias_tpp(bias[nk], out[s1][nk]);
++              } else {
++                zero_tpp(out[s1][nk]);
++              }
++            }
++            brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
++            if (!(nc + Ncb < Nc)) { // last nc iter
++              mul_tpp(in1[s1][nk], out[s1][nk], out[s1][nk]);
++            }
++          } else {
++            if (nc == 0) {
++              if (with_bias) {
++                copy_bias_tpp_rem(bias[nk], out[s1][nk]);
++              } else {
++                zero_tpp_rem(out[s1][nk]);
++              }
++            }
++            brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
++            brgemm_tpp.config();
++            if (!(nc + Ncb < Nc)) { // last nc iter
++              mul_tpp_rem(in1[s1][nk], out[s1][nk], out[s1][nk]);
++            }
++          }
++        },
++        [&]() { brgemm_tpp.config(); },
++        [&]() { brgemm_tpp.release(); });
++  }
+ }
+ 
+ template <typename T>
+-inline void fc_out(
++inline void tpp_linear_add_add(
+     at::Tensor& t_in,
+     at::Tensor& t_in1,
+     at::Tensor& t_in2,
+@@ -216,7 +389,7 @@ inline void fc_out(
+   auto sadd_tpp_rem = SCOPEIT((ScaleAddTPP<T, T>(rem, Hk, K, K)), EW_ADD);
+ 
+   {
+-    RECORD_SCOPE(o_gemm, {t_in, t_wt_V});
++    RECORD_SCOPE(tpp_linear_add_add_krnl, {t_in, t_wt_V});
+     // auto loop_scheme = large_cache_opt ? "acB" : "aBC";
+     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+     auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
+@@ -253,7 +426,7 @@ inline void fc_out(
+ }
+ 
+ template <typename T>
+-inline void fc_in(
++inline void tpp_linear_gelu(
+     at::Tensor& t_in,
+     at::Tensor& t_wt,
+     at::Tensor& t_bias,
+@@ -295,7 +468,7 @@ inline void fc_in(
+   auto gelu_fwd_tpp_rem = SCOPEIT(GeluFwdTPP<T>(rem, Hk, K, K), ACT);
+ 
+   {
+-    RECORD_SCOPE(i_gemm, {t_in, t_wt_V});
++    RECORD_SCOPE(tpp_linear_gelu_krnl, {t_in, t_wt_V});
+     // auto loop_scheme = large_cache_opt ? "acB" : "aBC";
+     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+     auto igemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
+@@ -329,8 +502,14 @@ inline void fc_in(
+   }
+ }
+ 
+-template <typename T, typename Tout = T>
+-inline void qkv_gemm(at::Tensor& t_in, at::Tensor& t_wt, at::Tensor& t_out) {
++template <typename T>
++inline void tpp_linear_add(
++    at::Tensor t_in,
++    at::Tensor t_in1,
++    at::Tensor t_wt,
++    at::Tensor t_bias,
++    at::Tensor t_out,
++    float scale) {
+   auto in_sizes = t_in.sizes();
+   auto BS = in_sizes[0] * in_sizes[1];
+   if (BS > FT_OPT_SIZE) { // first token compute
+@@ -344,47 +523,245 @@ inline void qkv_gemm(at::Tensor& t_in, at::Tensor& t_wt, at::Tensor& t_out) {
+   auto Nk = wt_sizes[0];
+   auto Hk = wt_sizes[3];
+   auto K = Nk * Hk;
++
+   auto t_wt_V = torch_ipex::tpp::wt_tensor_for_fwd(Nk, Hk, Nc, Hc, t_wt);
+ 
+   auto in = GetVLAPtr<T>(t_in, {Nc, Hc});
++  auto in1 = GetVLAPtr<T>(t_in1, {Nk, Hk});
+   auto wt_V = GetVLAPtr<T>(t_wt_V, {Nc, Hc * Hk});
+-  auto out = GetVLAPtr<Tout>(t_out, {Nk, Hk});
++  auto bias = GetVLAPtr<T>(t_bias, {Hk});
++  auto out = GetVLAPtr<T>(t_out, {Nk, Hk});
+ 
+   auto Ncb = Nc;
+   auto BSb = 64L;
+-  auto rem = BS % BSb;
++  auto rem = BS % 64;
+   if (large_cache_opt)
+     Ncb = NCB_BLOCK_SIZE;
+ 
+-  auto zero_tpp = SCOPEIT(SetZeroTPP<Tout>(BSb, Hk, K), EW_ZERO);
+-  auto zero_tpp_rem = SCOPEIT(SetZeroTPP<Tout>(rem, Hk, K), EW_ZERO);
++  bool with_bias = (t_bias.numel() > 0);
++  auto copy_bias_tpp = SCOPEIT(CpyBiasTPP<T>(BSb, Hk, K), BIAS);
++  auto copy_bias_tpp_rem = SCOPEIT(CpyBiasTPP<T>(rem, Hk, K), BIAS);
++  auto zero_tpp = SCOPEIT(SetZeroTPP<T>(BSb, Hk, K), EW_ZERO);
++  auto zero_tpp_rem = SCOPEIT(SetZeroTPP<T>(rem, Hk, K), EW_ZERO);
+   auto brgemm_tpp = SCOPEITGEMM(
+-      (BrgemmTPP<T, Tout>(BSb, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
++      (BrgemmTPP<T, T>(BSb, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
+   auto brgemm_tpp_rem = SCOPEITGEMM(
+-      (BrgemmTPP<T, Tout>(rem, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
++      (BrgemmTPP<T, T>(rem, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
++  auto sadd_tpp = SCOPEIT((ScaleAddTPP<T, T>(BSb, Hk, K, K)), EW_ADD);
++  auto sadd_tpp_rem = SCOPEIT((ScaleAddTPP<T, T>(rem, Hk, K, K)), EW_ADD);
+ 
+   {
+-    RECORD_SCOPE(qkv_gemm, {t_in, t_wt_V});
++    RECORD_SCOPE(tpp_linear_add_krnl, {t_in, t_wt_V});
+     // auto loop_scheme = large_cache_opt ? "acB" : "aBC";
+     auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
+-    auto gemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
++    auto ogemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
++        {{0, Nc, Ncb, false}, {0L, BS, BSb}, {Nk}}, loop_scheme);
++    ogemm_loop(
++        [&](int* ind) {
++          int nc = ind[0], s1 = ind[1], nk = ind[2];
++          auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
++          bool is_rem = (s1 + BSb > BS);
++          if (!is_rem) {
++            if (nc == 0) {
++              if (with_bias) {
++                copy_bias_tpp(bias[nk], out[s1][nk]);
++              } else {
++                zero_tpp(out[s1][nk]);
++              }
++            }
++            brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
++            if (!(nc + Ncb < Nc)) { // last nc iter
++              sadd_tpp(in1[s1][nk], out[s1][nk], scale);
++            }
++          } else {
++            if (nc == 0) {
++              if (with_bias) {
++                copy_bias_tpp_rem(bias[nk], out[s1][nk]);
++              } else {
++                zero_tpp_rem(out[s1][nk]);
++              }
++            }
++            brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
++            brgemm_tpp.config();
++            if (!(nc + Ncb < Nc)) { // last nc iter
++              sadd_tpp_rem(in1[s1][nk], out[s1][nk], scale);
++            }
++          }
++        },
++        [&]() { brgemm_tpp.config(); },
++        [&]() { brgemm_tpp.release(); });
++  }
++}
++
++template <typename T>
++inline void tpp_linear_silu(
++    at::Tensor t_in,
++    at::Tensor t_wt,
++    at::Tensor t_bias,
++    at::Tensor t_out) {
++  auto in_sizes = t_in.sizes();
++  auto BS = in_sizes[0] * in_sizes[1];
++  if (BS > FT_OPT_SIZE) { // first token compute
++    t_wt = wt_tensor_for_first_token<T>(t_wt);
++  }
++  auto wt_sizes = t_wt.sizes();
++  auto C = in_sizes[2];
++
++  auto Nc = wt_sizes[1];
++  auto Hc = C / Nc;
++  auto Nk = wt_sizes[0];
++  auto Hk = wt_sizes[3];
++  auto K = Nk * Hk;
++
++  auto t_wt_V = torch_ipex::tpp::wt_tensor_for_fwd(Nk, Hk, Nc, Hc, t_wt);
++
++  auto in = GetVLAPtr<T>(t_in, {Nc, Hc});
++  auto wt_V = GetVLAPtr<T>(t_wt_V, {Nc, Hc * Hk});
++  auto bias = GetVLAPtr<T>(t_bias, {Hk});
++  auto out = GetVLAPtr<T>(t_out, {Nk, Hk});
++
++  auto Ncb = Nc;
++  auto BSb = 64L;
++  auto rem = BS % 64;
++  if (large_cache_opt)
++    Ncb = NCB_BLOCK_SIZE;
++
++  bool with_bias = (t_bias.numel() > 0);
++  auto copy_bias_tpp = SCOPEIT(CpyBiasTPP<T>(BSb, Hk, K), BIAS);
++  auto copy_bias_tpp_rem = SCOPEIT(CpyBiasTPP<T>(rem, Hk, K), BIAS);
++  auto zero_tpp = SCOPEIT(SetZeroTPP<T>(BSb, Hk, K), EW_ZERO);
++  auto zero_tpp_rem = SCOPEIT(SetZeroTPP<T>(rem, Hk, K), EW_ZERO);
++  auto brgemm_tpp = SCOPEITGEMM(
++      (BrgemmTPP<T, T>(BSb, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
++  auto brgemm_tpp_rem = SCOPEITGEMM(
++      (BrgemmTPP<T, T>(rem, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
++  auto silu_fwd_tpp = SCOPEIT(SiLUFwdTPP<T>(BSb, Hk, K, K), ACT);
++  auto silu_fwd_tpp_rem = SCOPEIT(SiLUFwdTPP<T>(rem, Hk, K, K), ACT);
++
++  {
++    RECORD_SCOPE(tpp_linear_silu_krnl, {t_in, t_wt_V});
++    // auto loop_scheme = large_cache_opt ? "acB" : "aBC";
++    auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
++    auto igemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
+         {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
+-    gemm_loop(
++    igemm_loop(
+         [&](int* ind) {
+           int nc = ind[0], s1 = ind[1], nk = ind[2];
+           auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
+           bool is_rem = (s1 + BSb > BS);
+           if (!is_rem) {
+             if (nc == 0) {
+-              zero_tpp(out[s1][nk]);
++              if (with_bias) {
++                copy_bias_tpp(bias[nk], out[s1][nk]);
++              } else {
++                zero_tpp(out[s1][nk]);
++              }
+             }
+             brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
++            if (!(nc + Ncb < Nc)) { // last nc iter
++              silu_fwd_tpp(out[s1][nk], out[s1][nk]);
++            }
+           } else {
+             if (nc == 0) {
+-              zero_tpp_rem(out[s1][nk]);
++              if (with_bias) {
++                copy_bias_tpp_rem(bias[nk], out[s1][nk]);
++              } else {
++                zero_tpp_rem(out[s1][nk]);
++              }
+             }
+             brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
+             brgemm_tpp.config();
++            if (!(nc + Ncb < Nc)) { // last nc iter
++              silu_fwd_tpp_rem(out[s1][nk], out[s1][nk]);
++            }
++          }
++        },
++        [&]() { brgemm_tpp.config(); },
++        [&]() { brgemm_tpp.release(); });
++  }
++}
++
++template <typename T>
++inline void tpp_linear_relu(
++    at::Tensor t_in,
++    at::Tensor t_wt,
++    at::Tensor t_bias,
++    at::Tensor t_out) {
++  auto in_sizes = t_in.sizes();
++  auto BS = in_sizes[0] * in_sizes[1];
++  if (BS > FT_OPT_SIZE) { // first token compute
++    t_wt = wt_tensor_for_first_token<T>(t_wt);
++  }
++  auto wt_sizes = t_wt.sizes();
++  auto C = in_sizes[2];
++
++  auto Nc = wt_sizes[1];
++  auto Hc = C / Nc;
++  auto Nk = wt_sizes[0];
++  auto Hk = wt_sizes[3];
++  auto K = Nk * Hk;
++
++  auto t_wt_V = torch_ipex::tpp::wt_tensor_for_fwd(Nk, Hk, Nc, Hc, t_wt);
++
++  auto in = GetVLAPtr<T>(t_in, {Nc, Hc});
++  auto wt_V = GetVLAPtr<T>(t_wt_V, {Nc, Hc * Hk});
++  auto bias = GetVLAPtr<T>(t_bias, {Hk});
++  auto out = GetVLAPtr<T>(t_out, {Nk, Hk});
++
++  auto Ncb = Nc;
++  auto BSb = 64L;
++  auto rem = BS % 64;
++  if (large_cache_opt)
++    Ncb = NCB_BLOCK_SIZE;
++
++  bool with_bias = (t_bias.numel() > 0);
++  auto copy_bias_tpp = SCOPEIT(CpyBiasTPP<T>(BSb, Hk, K), BIAS);
++  auto copy_bias_tpp_rem = SCOPEIT(CpyBiasTPP<T>(rem, Hk, K), BIAS);
++  auto zero_tpp = SCOPEIT(SetZeroTPP<T>(BSb, Hk, K), EW_ZERO);
++  auto zero_tpp_rem = SCOPEIT(SetZeroTPP<T>(rem, Hk, K), EW_ZERO);
++  auto brgemm_tpp = SCOPEITGEMM(
++      (BrgemmTPP<T, T>(BSb, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
++  auto brgemm_tpp_rem = SCOPEITGEMM(
++      (BrgemmTPP<T, T>(rem, Hk, Hc, Hc, Hk * Hc, C, Hk, K, 1.0, 0, Ncb)));
++  auto relu_fwd_tpp = SCOPEIT(ReLUFwdTPP<T>(BSb, Hk, K, K, false), ACT);
++  auto relu_fwd_tpp_rem = SCOPEIT(ReLUFwdTPP<T>(rem, Hk, K, K, false), ACT);
++
++  {
++    RECORD_SCOPE(tpp_linear_relu_krnl, {t_in, t_wt_V});
++    // auto loop_scheme = large_cache_opt ? "acB" : "aBC";
++    auto loop_scheme = large_cache_opt ? GEMM_LOOP_SCHEME : "aCb";
++    auto igemm_loop = torch_ipex::tpp::ThreadedLoop<3>(
++        {{0, Nc, Ncb, false}, {0, BS, BSb}, {Nk}}, loop_scheme);
++    igemm_loop(
++        [&](int* ind) {
++          int nc = ind[0], s1 = ind[1], nk = ind[2];
++          auto count = nc + Ncb < Nc ? Ncb : Nc - nc;
++          bool is_rem = (s1 + BSb > BS);
++          if (!is_rem) {
++            if (nc == 0) {
++              if (with_bias) {
++                copy_bias_tpp(bias[nk], out[s1][nk]);
++              } else {
++                zero_tpp(out[s1][nk]);
++              }
++            }
++            brgemm_tpp(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, true);
++            if (!(nc + Ncb < Nc)) { // last nc iter
++              relu_fwd_tpp(out[s1][nk], out[s1][nk]);
++            }
++          } else {
++            if (nc == 0) {
++              if (with_bias) {
++                copy_bias_tpp_rem(bias[nk], out[s1][nk]);
++              } else {
++                zero_tpp_rem(out[s1][nk]);
++              }
++            }
++            brgemm_tpp_rem(in[s1][nc], wt_V[nk][nc], out[s1][nk], count, false);
++            brgemm_tpp.config();
++            if (!(nc + Ncb < Nc)) { // last nc iter
++              relu_fwd_tpp_rem(out[s1][nk], out[s1][nk]);
++            }
+           }
+         },
+         [&]() { brgemm_tpp.config(); },
+diff --git a/csrc/cpu/tpp/timing.h b/csrc/cpu/tpp/timing.h
+index e399d038..f2f7cf68 100644
+--- a/csrc/cpu/tpp/timing.h
++++ b/csrc/cpu/tpp/timing.h
+@@ -158,6 +158,16 @@ class ScopedTPP {
+   template <typename... Types>
+   void operator()(Types... vars) {
+     ScopedTimer _t(t);
++#ifdef DEBUG_TRACE_TPP
++    if (omp_get_thread_num() == 0) {
++      auto cur_class_name = get_class_name<T>();
++      if (cur_class_name != prev_class_name) {
++        std::cout << "Calling impl " << impl << " for " << cur_class_name
++                  << std::endl;
++        prev_class_name = cur_class_name;
++      }
++    }
++#endif
+     if (impl == 0) {
+       func(vars...);
+     } else if (impl == 1) {
+diff --git a/csrc/cpu/tpp/xsmm_functors.h b/csrc/cpu/tpp/xsmm_functors.h
+index 9808a0be..846bfbb7 100644
+--- a/csrc/cpu/tpp/xsmm_functors.h
++++ b/csrc/cpu/tpp/xsmm_functors.h
+@@ -934,6 +934,46 @@ class ReduceAddRowTPP {
+   AddTPP<Tout, Tout> add;
+ };
+ 
++template <typename Tin, typename Tout = Tin>
++class MulTPP {
++ public:
++  MulTPP() {}
++  MulTPP(int N) : MulTPP(1, N) {}
++  MulTPP(int rows, int cols) : MulTPP(rows, cols, cols, cols) {}
++  MulTPP(int rows, int cols, int ldi, int ldo)
++      : rows(rows),
++        cols(cols),
++        ldi(ldi),
++        ldo(ldo),
++        kernel(
++            rows,
++            cols,
++            ldi,
++            ldo,
++            XsmmDtype<Tin>(),
++            XsmmDtype<Tout>(),
++            LIBXSMM_DATATYPE_F32,
++            LIBXSMM_MELTW_FLAG_BINARY_NONE,
++            LIBXSMM_MELTW_TYPE_BINARY_MUL) {}
++  void operator()(Tin* in0, Tin* in1, Tout* out) {
++    kernel((void*)in0, (void*)in1, (void*)out);
++  }
++  void ref(Tin* in0, Tin* in1, Tout* out) {
++    for (int r = 0; r < rows; r++) {
++      for (int c = 0; c < cols; c++) {
++        out[r * ldo + c] = (float)in0[r * ldi + c] * (float)in1[r * ldi + c];
++      }
++    }
++  }
++
++ private:
++  int rows = 0;
++  int cols = 0;
++  int ldi;
++  int ldo;
++  BinaryTPP kernel;
++};
++
+ template <typename T>
+ class BCastMulTPP {
+  public:
+@@ -2211,20 +2251,28 @@ class SiLUFwdTPP {
+             cols,
+             ldi,
+             ldo,
++            ldo,
++            XsmmDtype<T>(),
+             XsmmDtype<T>(),
+             XsmmDtype<T>(),
+             LIBXSMM_DATATYPE_F32,
+             LIBXSMM_MELTW_FLAG_BINARY_NONE,
+             LIBXSMM_MELTW_TYPE_BINARY_MUL) {}
+-  void operator()(T* in, T* out, T* sigout) {
++  void operator()(T* in, T* out, T* sigout = nullptr) {
++    T tmp[rows * ldo];
++    if (sigout == nullptr)
++      sigout = tmp;
+     sigmoid((void*)in, (void*)sigout);
+     mul((void*)in, (void*)sigout, (void*)out);
+   }
+-  void ref(T* in, T* out, T* sigout) {
++  void ref(T* in, T* out, T* sigout = nullptr) {
++    T tmp[rows * ldo];
++    if (sigout == nullptr)
++      sigout = tmp;
+     for (int i = 0; i < rows; i++) {
+       for (int j = 0; j < cols; j++) {
+         sigout[i * ldo + j] = 1. / (1. + exp(-in[i * ldi + j]));
+-        out[i * ldo + j] = in[i * ldo + j] * sigout[i * ldo + j];
++        out[i * ldo + j] = in[i * ldi + j] * sigout[i * ldo + j];
+       }
+     }
+   }
+diff --git a/csrc/cpu/vec/vec512/perf_kernel/add_softmax.h b/csrc/cpu/vec/vec512/perf_kernel/add_softmax.h
+index 656015bb..dcc064f9 100644
+--- a/csrc/cpu/vec/vec512/perf_kernel/add_softmax.h
++++ b/csrc/cpu/vec/vec512/perf_kernel/add_softmax.h
+@@ -221,6 +221,31 @@ inline void _dil_normalization_kernel(
+   }
+ }
+ 
++template <typename scalar_t>
++inline void _dil_add_kernel(
++    const scalar_t* src,
++    float* dst,
++    const int& size) {
++  __m512 vec_a = {};
++  __m512 vec_out = {};
++
++  int j = 0;
++  for (; j <= size - 16; j += 16) {
++    vec_a = _loadu(src + j);
++    vec_out = _loadu(dst + j);
++    vec_out = _mm512_add_ps(vec_a, vec_out);
++    _storeu(dst + j, vec_out);
++  }
++
++  if (j < size) {
++    __mmask16 mask = (1 << (size - j)) - 1;
++    vec_a = _maskz_loadu(src + j, mask);
++    vec_out = _maskz_loadu(dst + j, mask);
++    vec_out = _mm512_add_ps(vec_out, vec_a);
++    _mask_storeu(dst + j, vec_out, mask);
++  }
++}
++
+ inline void _dil_add_reduce_max_fusion_kernel(
+     float* a,
+     const float* b,
+@@ -254,6 +279,32 @@ inline void _dil_add_reduce_max_fusion_kernel(
+   max = _mm512_reduce_max_ps(vec_ps_min);
+ }
+ 
++inline void _dil_reduce_max_fusion_kernel(
++    const float* a,
++    const int& size,
++    float* out,
++    float& max) {
++  auto vec_ps_min = _mm512_set1_ps(std::numeric_limits<float>::lowest());
++  auto vec_out = vec_ps_min;
++
++  int i = 0;
++  for (; i <= size - 16; i += 16) {
++    vec_out = _loadu(a + i);
++    vec_ps_min = _mm512_max_ps(vec_ps_min, vec_out);
++    _mm512_storeu_ps(out + i, vec_out);
++  }
++
++  if (i < size) {
++    __mmask16 mask = (1 << (size - i)) - 1;
++    vec_out = _maskz_loadu(a + i, mask);
++    vec_ps_min = _mm512_mask_max_ps(vec_ps_min, mask, vec_out, vec_ps_min);
++    _mm512_mask_storeu_ps(out + i, mask, vec_out);
++  }
++
++  // NOTE: _mm512_reduce_max_ps is sequence instruction
++  max = _mm512_reduce_max_ps(vec_ps_min);
++}
++
+ inline void _dil_mul_reduce_max_fusion_kernel(
+     const float* a,
+     const float& scale,
+diff --git a/examples/cpu/inference/python/llm/README.md b/examples/cpu/inference/python/llm/README.md
+new file mode 100644
+index 00000000..26369240
+--- /dev/null
++++ b/examples/cpu/inference/python/llm/README.md
+@@ -0,0 +1,147 @@
++# Text Generation
++We provide the inference benchmarking script `run_generation.py` for large language models text generation.<br/>
++Support large language models, such as GPT-J, LLaMA, GPT-Neox.<br/>
++And script `run_generation_with_deepspeed.py` for distributed with DeepSpeed.<br/>
++And script `run_model_int8.py` for int8.<br/>
++
++## Setup
++```bash
++WORK_DIR=$PWD
++# GCC 12.3 is required, please set it firstly
++# Create environment (conda recommended)
++conda create -n llm python=3.9 -y
++# install deps
++conda install gcc=12.3 gxx=12.3 cxx-compiler -c conda-forge -y
++conda install cmake ninja mkl mkl-include -y
++conda install gperftools -c conda-forge -y
++
++# Install PyTorch
++python -m pip install torch==2.1.0.dev20230711+cpu torchvision==0.16.0.dev20230711+cpu torchaudio==2.1.0.dev20230711+cpu --index-url https://download.pytorch.org/whl/nightly/cpu
++
++# Install IPEX with semi-compiler, require gcc 12.3
++rm -rf llvm-project && mkdir llvm-project && cd llvm-project
++wget https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.6/cmake-16.0.6.src.tar.xz
++wget https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.6/llvm-16.0.6.src.tar.xz
++tar -xf cmake-16.0.6.src.tar.xz && mv cmake-16.0.6.src cmake
++tar -xf llvm-16.0.6.src.tar.xz && mv llvm-16.0.6.src llvm
++mkdir build && cd build
++cmake ../llvm -DCMAKE_INSTALL_PREFIX=${PWD}/_install/llvm -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD=X86 -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_ENABLE_TERMINFO=OFF -DLLVM_INCLUDE_BENCHMARKS=OFF -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
++make install -j$(nproc)
++ln -s ${PWD}/_install/llvm/bin/llvm-config ${CONDA_PREFIX}/bin/llvm-config-13
++cd ../../
++
++git clone --branch llm_feature_branch https://github.com/intel-innersource/frameworks.ai.pytorch.ipex-cpu
++cd frameworks.ai.pytorch.ipex-cpu
++git submodule sync && git submodule update --init --recursive
++export DNNL_GRAPH_BUILD_COMPILER_BACKEND=1
++export CXXFLAGS="${CXXFLAGS} -D__STDC_FORMAT_MACROS"
++python setup.py install
++cd ../
++
++# Install transformers
++pip install transformers==4.28.1
++# Install others deps
++pip install cpuid accelerate datasets sentencepiece protobuf==3.20.3
++
++# Setup environment variables for performance on Xeon
++export LD_PRELOAD=${CONDA_PREFIX}/lib/libstdc++.so.6
++export KMP_BLOCKTIME=INF
++export KMP_TPAUSE=0
++export KMP_SETTINGS=1
++export KMP_AFFINITY=granularity=fine,compact,1,0
++export KMP_FORJOIN_BARRIER_PATTERN=dist,dist
++export KMP_PLAIN_BARRIER_PATTERN=dist,dist
++export KMP_REDUCTION_BARRIER_PATTERN=dist,dist
++export LD_PRELOAD=${LD_PRELOAD}:${CONDA_PREFIX}/lib/libiomp5.so # Intel OpenMP
++# Tcmalloc is a recommended malloc implementation that emphasizes fragmentation avoidance and scalable concurrency support.
++export LD_PRELOAD=${LD_PRELOAD}:${CONDA_PREFIX}/lib/libtcmalloc.so
++
++# [Optional] install neural-compressor for GPT-J INT8 only
++pip install neural-compressor==2.2
++
++# [Optional] The following is only for DeepSpeed case
++git clone https://github.com/delock/DeepSpeedSYCLSupport
++cd DeepSpeedSYCLSupport
++git checkout gma/run-opt-branch
++python -m pip install -r requirements/requirements.txt
++python setup.py install
++cd ../
++git clone https://github.com/oneapi-src/oneCCL.git
++cd oneCCL
++mkdir build
++cd build
++cmake ..
++make -j install
++source _install/env/setvars.sh
++cd ../..
++
++# Get the sample prompt.json
++# Make sure the downloaded prompt.json file is under the same directory as that of the python scripts mentioned above.
++wget https://intel-extension-for-pytorch.s3.amazonaws.com/miscellaneous/llm/prompt.json
++
++```
++
++
++## Supported Model List
++```
++<MODEL ID> in
++(1) "EleutherAI/gpt-j-6b" (model id from transformers Hub)
++(2) "EleutherAI/gpt-neox-20b" (model id from transformers Hub)
++(3) Llama 2 Model directory path
++Note: Above models are well supported with all optimizations like indirect access KV cache, fused ROPE, and prepacked TPP Linear (fp32/bf16). For other LLM models (like OPT, Bloom...), we could still run with this BKC, and may get parts of optimizations like prepacked TPP Linear (fp32/bf16), and we are working in progress to cover all optimizations to these other LLM models, which will expand the model list above.
++```
++* Llama 2 model conversion steps:
++    1) [transformers conversion tool](https://github.com/huggingface/transformers/blob/main/src/transformers/models/llama/convert_llama_weights_to_hf.py) (Verified [meta-llama/Llama-2-7b-chat](https://huggingface.co/meta-llama/Llama-2-7b-chat) and [meta-llama/Llama-2-13b-chat](https://huggingface.co/meta-llama/Llama-2-13b-chat)).
++    2) Follow [instructions](https://github.com/facebookresearch/llama#access-on-hugging-face) to download model files for conversion.
++    3) Decompress the downloaded model file.
++    4) Follow [instructions](https://github.com/facebookresearch/llama-recipes#model-conversion-to-hugging-face) to convert the model.
++    5) Launch example scripts with the place holder <MODEL_ID> substituted by the --output_dir argument value of the conversion script.
++
++
++## Single Instance Performance
++```bash
++# Get prompt file to the path of scripts
++mv PATH/TO/prompt.json WORK_DIR
++
++# bfloat16 benchmark
++OMP_NUM_THREADS=<physical cores num> numactl -m <node N> -C <physical cores list> python run_generation.py --benchmark -m <MODEL_ID> --dtype bfloat16 --ipex --jit
++
++# int8 benchmark
++## (1) Do quantization to get the quantized model
++mkdir saved_results
++
++## GPT-J quantization
++python run_gpt-j_int8.py --ipex-smooth-quant --lambada --output-dir "saved_results" --jit --int8-bf16-mixed -m <GPTJ MODEL_ID>
++## Llama 2 quantization
++python run_llama_int8.py --ipex-smooth-quant --lambada --output-dir "saved_results" --jit --int8-bf16-mixed -m <LLAMA MODEL_ID>
++## GPT-NEOX quantization
++python run_gpt-neox_int8.py --ipex-weight-only-quantization --lambada --output-dir "saved_results" --jit --int8 -m <GPT-NEOX MODEL_ID>
++
++## (2) Run int8 performance test (note that GPT-NEOX uses --int8 instead of --int8-bf16-mixed)
++OMP_NUM_THREADS=<physical cores num> numactl -m <node N> -C <cpu list> python run_<MODEL>_int8.py -m <MODEL_ID> --quantized-model-path "./saved_results/best_model.pt" --benchmark --jit --int8-bf16-mixed
++```
++## Single Instance Accuracy
++```bash
++# bfloat16
++OMP_NUM_THREADS=<physical cores num> numactl -m <node N> -C <physical cores list> python run_generation.py --accuracy-only -m <MODEL_ID> --dtype bfloat16 --ipex --jit --lambada
++
++# Quantization as a performance part
++# (1) Do quantization to get the quantized model as mentioned above
++# (2) Run int8 accuracy test (note that GPT-NEOX uses --int8 instead of --int8-bf16-mixed)
++OMP_NUM_THREADS=<physical cores num> numactl -m <node N> -C <cpu list> python run_<MODEL>_int8.py -m <MODEL ID> --quantized-model-path "./saved_results/best_model.pt" --accuracy-only --jit --int8-bf16-mixed --lambada
++```
++
++## Distributed Performance with DeepSpeed (autoTP)
++```bash
++export DS_SHM_ALLREDUCE=1
++unset KMP_AFFINITY
++
++# Get prompt file to the path of scripts
++mv PATH/TO/prompt.json WORK_DIR
++
++# Run GPTJ/LLAMA with bfloat16  DeepSpeed
++deepspeed --bind_cores_to_rank run_generation_with_deepspeed.py --benchmark -m <MODEL_ID> --dtype bfloat16 --ipex --jit
++
++# Run GPT-NeoX with ipex weight only quantization
++deepspeed --bind_cores_to_rank run_generation_with_deepspeed.py --benchmark -m EleutherAI/gpt-neox-20b --dtype float32 --ipex --jit --ipex-weight-only-quantization
++```
+diff --git a/examples/cpu/inference/python/llm/run_generation.py b/examples/cpu/inference/python/llm/run_generation.py
+index 32ba07c6..12c7570f 100644
+--- a/examples/cpu/inference/python/llm/run_generation.py
++++ b/examples/cpu/inference/python/llm/run_generation.py
+@@ -21,7 +21,7 @@ from transformers import (
+ MODEL_CLASSES = {
+     "gpt-j": (AutoModelForCausalLM, AutoTokenizer),
+     "gpt-neox": (AutoModelForCausalLM, AutoTokenizer),
+-    "llama": (LlamaForCausalLM, LlamaTokenizer),
++    "llama": (AutoModelForCausalLM, LlamaTokenizer),
+     "auto": (AutoModelForCausalLM, AutoTokenizer),
+ }
+ 
+diff --git a/examples/cpu/inference/python/llm/run_generation_with_deepspeed.py b/examples/cpu/inference/python/llm/run_generation_with_deepspeed.py
+index c2565de0..d16286ab 100644
+--- a/examples/cpu/inference/python/llm/run_generation_with_deepspeed.py
++++ b/examples/cpu/inference/python/llm/run_generation_with_deepspeed.py
+@@ -27,7 +27,7 @@ from transformers import (
+ MODEL_CLASSES = {
+     "gpt-j": (AutoModelForCausalLM, AutoTokenizer),
+     "gpt-neox": (AutoModelForCausalLM, AutoTokenizer),
+-    "llama": (LlamaForCausalLM, LlamaTokenizer),
++    "llama": (AutoModelForCausalLM, LlamaTokenizer),
+     "auto": (AutoModelForCausalLM, AutoTokenizer),
+ }
+ 
+diff --git a/intel_extension_for_pytorch/__init__.py b/intel_extension_for_pytorch/__init__.py
+index b2124295..51b7331c 100644
+--- a/intel_extension_for_pytorch/__init__.py
++++ b/intel_extension_for_pytorch/__init__.py
+@@ -32,7 +32,10 @@ except BaseException:
+     )
+ 
+ from .frontend import optimize
+-from .cpu.transformers import _optimize_transformers
++from .cpu.transformers import (
++    _optimize_transformers,
++    _set_optimized_model_for_generation,
++)
+ from .frontend import enable_auto_channels_last, disable_auto_channels_last
+ from .frontend import set_fp32_math_mode, get_fp32_math_mode, FP32MathMode
+ from .cpu._auto_kernel_selection import _enable_dnnl, _disable_dnnl, _using_dnnl
+diff --git a/intel_extension_for_pytorch/cpu/tpp/fused_llm.py b/intel_extension_for_pytorch/cpu/tpp/fused_llm.py
+index 788052dd..10877702 100644
+--- a/intel_extension_for_pytorch/cpu/tpp/fused_llm.py
++++ b/intel_extension_for_pytorch/cpu/tpp/fused_llm.py
+@@ -55,8 +55,24 @@ def GPTNeoXLayer_forward(
+     return outputs
+ 
+ 
++def LlamaMLP_forward_distributed(self, x):
++    gate = torch.ops.torch_ipex.tpp_linear_silu(
++        x, self.gate_proj.weight, x.new_empty(0)
++    )
++    up = torch.ops.torch_ipex.tpp_linear_mul(
++        x, gate, self.up_proj.weight, x.new_empty(0)
++    )
++    return self.down_proj(up)
++
++
+ def LlamaMLP_forward(self, x):
+-    return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
++    gate = torch.ops.torch_ipex.tpp_linear_silu(
++        x, self.gate_proj.weight, x.new_empty(0)
++    )
++    up = torch.ops.torch_ipex.tpp_linear_mul(
++        x, gate, self.up_proj.weight, x.new_empty(0)
++    )
++    return up
+ 
+ 
+ def LlamaDecoderLayer_forward(
+@@ -86,8 +102,13 @@ def LlamaDecoderLayer_forward(
+     # Fully Connected
+     residual = hidden_states
+     hidden_states = self.post_attention_layernorm(hidden_states)
+-    hidden_states = self.mlp(hidden_states)
+-    hidden_states = residual + hidden_states
++    hidden_states = torch.ops.torch_ipex.tpp_linear_add(
++        self.mlp(hidden_states),
++        residual,
++        self.mlp.down_proj.weight,
++        hidden_states.new_empty(0),
++        1.0,
++    )
+ 
+     outputs = (hidden_states,)
+ 
+@@ -103,7 +124,7 @@ def LlamaDecoderLayer_forward(
+ def GPTJMLP_forward(
+     self, hidden_states: Optional[torch.FloatTensor]
+ ) -> torch.FloatTensor:
+-    hidden_states = torch.ops.torch_ipex.fc_in_gemm(
++    hidden_states = torch.ops.torch_ipex.tpp_linear_gelu(
+         hidden_states, self.fc_in.weight, self.fc_in.bias
+     )
+     return hidden_states
+@@ -112,7 +133,7 @@ def GPTJMLP_forward(
+ def GPTJMLP_forward_distributed(
+     self, hidden_states: Optional[torch.FloatTensor]
+ ) -> torch.FloatTensor:
+-    hidden_states = torch.ops.torch_ipex.fc_in_gemm(
++    hidden_states = torch.ops.torch_ipex.tpp_linear_gelu(
+         hidden_states, self.fc_in.weight, self.fc_in.bias
+     )
+     hidden_states = self.fc_out(hidden_states)
+@@ -147,7 +168,7 @@ def GPTJBlock_forward(
+     outputs = attn_outputs[1:]
+ 
+     feed_forward_hidden_states = self.mlp(hidden_states)
+-    hidden_states = torch.ops.torch_ipex.fc_out_gemm(
++    hidden_states = torch.ops.torch_ipex.tpp_linear_add_add(
+         feed_forward_hidden_states,
+         attn_output,
+         residual,
+diff --git a/intel_extension_for_pytorch/cpu/transformers/__init__.py b/intel_extension_for_pytorch/cpu/transformers/__init__.py
+index 4121dec2..43464e70 100644
+--- a/intel_extension_for_pytorch/cpu/transformers/__init__.py
++++ b/intel_extension_for_pytorch/cpu/transformers/__init__.py
+@@ -1 +1,2 @@
+ from .optimize import _optimize_transformers
++from .optimize import _set_optimized_model_for_generation
+diff --git a/intel_extension_for_pytorch/cpu/transformers/attentions.py b/intel_extension_for_pytorch/cpu/transformers/attentions.py
+index 180ab1dd..e97c42e1 100644
+--- a/intel_extension_for_pytorch/cpu/transformers/attentions.py
++++ b/intel_extension_for_pytorch/cpu/transformers/attentions.py
+@@ -487,8 +487,8 @@ class _LlamaAttention_GQA(nn.Module):
+         self.hidden_size = module.hidden_size
+         self.num_heads = module.num_heads
+         self.num_kv_heads = (
+-            self.config.num_attention_kv_heads
+-            if hasattr(self.config, "num_attention_kv_heads")
++            self.config.num_key_value_heads
++            if hasattr(self.config, "num_key_value_heads")
+             else module.num_attention_heads
+         )
+         self.head_dim = self.hidden_size // self.num_heads
+@@ -518,16 +518,18 @@ class _LlamaAttention_GQA(nn.Module):
+             else 2048
+         )
+ 
+-    def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
+-        """torch.repeat_interleave(x, dim=2, repeats=n_rep)"""
+-        bs, slen, n_kv_heads, head_dim = x.shape
++    def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
++        """
++        This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
++        num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
++        """
++        batch, num_key_value_heads, slen, head_dim = hidden_states.shape
+         if n_rep == 1:
+-            return x
+-        return (
+-            x[:, :, :, None, :]
+-            .expand(bs, slen, n_kv_heads, n_rep, head_dim)
+-            .reshape(bs, slen, n_kv_heads * n_rep, head_dim)
++            return hidden_states
++        hidden_states = hidden_states[:, :, None, :, :].expand(
++            batch, num_key_value_heads, n_rep, slen, head_dim
+         )
++        return hidden_states.reshape(batch, num_key_value_heads * n_rep, slen, head_dim)
+ 
+     def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
+         return (
+@@ -618,20 +620,15 @@ class _LlamaAttention_GQA(nn.Module):
+                 torch.tensor(past_key_value[3] + query.shape[1], dtype=torch.long),
+             )
+         else:
+-            # repeat k/v heads if n_kv_heads < n_heads
+-            key = self.repeat_kv(
+-                key, self.n_rep
+-            )  # (bs, seqlen, n_local_heads, head_dim)
+-            value = self.repeat_kv(
+-                value, self.n_rep
+-            )  # (bs, seqlen, n_local_heads, head_dim)
+             value_states = value.transpose(1, 2)
+             query_states = query.transpose(1, 2)
+             key_states = key.transpose(1, 2)
+             kv_seq_len = key_states.shape[-2]
+ 
+             past_key_value = None
+-
++            # repeat k/v heads if n_kv_heads < n_heads
++            key_states = self.repeat_kv(key_states, self.n_rep)
++            value_states = self.repeat_kv(value_states, self.n_rep)
+             attn_weights = torch.matmul(
+                 query_states, key_states.transpose(2, 3)
+             ) / math.sqrt(self.head_dim)
+diff --git a/intel_extension_for_pytorch/cpu/transformers/generation.py b/intel_extension_for_pytorch/cpu/transformers/generation.py
+index 84e9ffd7..e71a9ec1 100644
+--- a/intel_extension_for_pytorch/cpu/transformers/generation.py
++++ b/intel_extension_for_pytorch/cpu/transformers/generation.py
+@@ -271,17 +271,31 @@ def _beam_search(
+ 
+             if hasattr(self, "trace_graph"):
+                 if first_token:
+-                    model_inputs["attention_mask"] = model_inputs["attention_mask"][
+-                        :1, :
+-                    ]
+-                    model_inputs["input_ids"] = model_inputs["input_ids"][:1, :]
+-                    model_inputs["position_ids"] = model_inputs["position_ids"][:1, :]
++                    new_attention_mask = model_inputs["attention_mask"][
++                        :batch_size
++                    ].clone()
++                    new_input_ids = model_inputs["input_ids"][:batch_size].clone()
++                    new_position_ids = model_inputs["position_ids"][:batch_size].clone()
++                    for i in range(batch_size):
++                        new_attention_mask[i] = model_inputs["attention_mask"][
++                            i * num_beams
++                        ]
++                        new_input_ids[i] = model_inputs["input_ids"][i * num_beams]
++                        new_position_ids[i] = model_inputs["position_ids"][
++                            i * num_beams
++                        ]
++                    model_inputs["attention_mask"] = new_attention_mask
++                    model_inputs["input_ids"] = new_input_ids
++                    model_inputs["position_ids"] = new_position_ids
+                 model_inputs.pop("use_cache", None)
+                 model_inputs.pop("token_type_ids", None)
+-                outputs = self.trace_graph(**model_inputs)
++                if first_token and hasattr(self, "trace_graph_first"):
++                    outputs = self.trace_graph_first(**model_inputs)
++                else:
++                    outputs = self.trace_graph(**model_inputs)
+                 if first_token and len(model_inputs["past_key_values"][0]) == 4:
+                     outputs = list(outputs)
+-                    outputs[0] = outputs[0].repeat_interleave(input_bs, dim=0)
++                    outputs[0] = outputs[0].repeat_interleave(num_beams, dim=0)
+                     outputs = tuple(outputs)
+                 if synced_gpus and this_peer_finished:
+                     cur_len = cur_len + 1
+diff --git a/intel_extension_for_pytorch/cpu/transformers/optimize.py b/intel_extension_for_pytorch/cpu/transformers/optimize.py
+index c4105a59..569d17be 100644
+--- a/intel_extension_for_pytorch/cpu/transformers/optimize.py
++++ b/intel_extension_for_pytorch/cpu/transformers/optimize.py
+@@ -56,6 +56,17 @@ def is_distributed(m):
+         is_distributed(sub_m)
+ 
+ 
++def _set_optimized_model_for_generation(
++    model,
++    optimized_model,
++    first_token_optimized_model=None,
++):
++    if first_token_optimized_model is not None:
++        setattr(model, "trace_graph_first", first_token_optimized_model)
++
++    setattr(model, "trace_graph", optimized_model)
++
++
+ def _optimize_transformers(
+     model,
+     dtype=torch.float,
+@@ -101,11 +112,10 @@ def _optimize_transformers(
+             # tpp rope optimization has transformers version requirements
+             installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
+             min_version = "4.28.0"
+-            max_version = "4.30.0"
+             if "transformers" not in installed_pkg:
+                 raise RuntimeError(
+-                    "optimize_transformers optimization requires transformers package and its version between {} and {}, fallback due to not meet".format(
+-                        min_version, max_version
++                    "optimize_transformers optimization requires transformers package and its version at least {} , fallback due to not meet".format(
++                        min_version
+                     )
+                 )
+ 
+@@ -113,12 +123,10 @@ def _optimize_transformers(
+             from packaging import version
+ 
+             trans_version = transformers.__version__
+-            if version.parse(trans_version) < version.parse(
+-                min_version
+-            ) or version.parse(trans_version) > version.parse(max_version):
++            if version.parse(trans_version) < version.parse(min_version):
+                 raise RuntimeError(
+-                    "optimize_transformers optimization requires the transformers with version: between {} and {} while now transformers== {}, fallback due to not meet".format(
+-                        min_version, max_version, trans_version
++                    "optimize_transformers optimization requires the transformers with version: at least {} while now transformers== {}, fallback due to not meet".format(
++                        min_version, trans_version
+                     )
+                 )
+ 
+@@ -142,6 +150,7 @@ def _optimize_transformers(
+                 GPTNeoXMLP_forward,
+                 GPTNeoXLayer_forward,
+                 LlamaMLP_forward,
++                LlamaMLP_forward_distributed,
+                 LlamaDecoderLayer_forward,
+             )
+             from .models import (
+@@ -220,7 +229,7 @@ def _optimize_transformers(
+                     _GPTNeoXAttention,
+                     _model.config,
+                 )
+-                if hasattr(_model.config, "num_attention_kv_heads"):
++                if hasattr(_model.config, "num_key_value_heads"):
+                     convert_class(
+                         _model,
+                         transformers.models.llama.modeling_llama.LlamaAttention,
+@@ -252,8 +261,8 @@ def _optimize_transformers(
+                     # linear-wise optimizations
+                     _enable_tpp()
+                     _model = optimize(_model.eval(), dtype=dtype, inplace=True)
+-                    # linear-postop-wise optimizations
+ 
++                    # linear-postop-wise optimizations
+                     is_distributed(_model)
+                     if not distributed:
+                         convert_forward(
+@@ -266,7 +275,23 @@ def _optimize_transformers(
+                             transformers.models.gptj.modeling_gptj.GPTJMLP,
+                             GPTJMLP_forward,
+                         )
++                        convert_forward(
++                            _model,
++                            transformers.models.llama.modeling_llama.LlamaDecoderLayer,
++                            LlamaDecoderLayer_forward,
++                        )
++                        convert_forward(
++                            _model,
++                            transformers.models.llama.modeling_llama.LlamaMLP,
++                            LlamaMLP_forward,
++                        )
++
+                     else:
++                        convert_forward(
++                            _model,
++                            transformers.models.llama.modeling_llama.LlamaMLP,
++                            LlamaMLP_forward_distributed,
++                        )
+                         convert_forward(
+                             _model,
+                             transformers.models.gptj.modeling_gptj.GPTJMLP,
+diff --git a/intel_extension_for_pytorch/nn/utils/_parameter_wrapper.py b/intel_extension_for_pytorch/nn/utils/_parameter_wrapper.py
+index 897ff8f6..d8b052ec 100644
+--- a/intel_extension_for_pytorch/nn/utils/_parameter_wrapper.py
++++ b/intel_extension_for_pytorch/nn/utils/_parameter_wrapper.py
+@@ -4,7 +4,10 @@ import functools
+ import contextlib
+ import types
+ import warnings
+-from intel_extension_for_pytorch.cpu._auto_kernel_selection import _using_dnnl, _using_tpp
++from intel_extension_for_pytorch.cpu._auto_kernel_selection import (
++    _using_dnnl,
++    _using_tpp,
++)
+ from intel_extension_for_pytorch import frontend
+ from intel_extension_for_pytorch.nn.utils._weight_prepack import (
+     _IPEXLinear,
+@@ -546,8 +549,13 @@ class ParameterWrapper(object):
+                 )
+             self.pack_weight(use_dnnl)
+         else:
+-            from intel_extension_for_pytorch.nn.utils import Apply_TPPLinear_weight_prepack
++            from intel_extension_for_pytorch.nn.utils import (
++                Apply_TPPLinear_weight_prepack,
++            )
++
+             Apply_TPPLinear_weight_prepack(module, dtype=module.weight.dtype)
++            self.parameter.data = module.weight.data
++            self.parameter = module.weight
+ 
+     def load_cast_and_prepack(self, module, param):
+         # load from state dict
+diff --git a/intel_extension_for_pytorch/nn/utils/_weight_prepack.py b/intel_extension_for_pytorch/nn/utils/_weight_prepack.py
+index 0a851efa..6c0dfd8c 100644
+--- a/intel_extension_for_pytorch/nn/utils/_weight_prepack.py
++++ b/intel_extension_for_pytorch/nn/utils/_weight_prepack.py
+@@ -10,9 +10,14 @@ from intel_extension_for_pytorch.cpu.tpp.utils.blocked_layout import (
+     BlockedParameter,
+     get_vnni_blocking,
+ )
++
++from intel_extension_for_pytorch.cpu._auto_kernel_selection import _using_tpp
++
+ logger = logging.getLogger(__name__)
+ 
+ USE_LOW_PREC_PARAMS = True
++
++
+ def TPPLinear_weight_prepack(m, bk=None, bc=None, layer_dtype=torch.float32):
+     m.__class__ = _IPEXLinear
+     m.weight = BlockedParameter(m.weight.data)
+@@ -44,19 +49,28 @@ def TPPLinear_weight_prepack(m, bk=None, bc=None, layer_dtype=torch.float32):
+         m.bias.set_blocking_param((None, None, layer_dtype))
+     return m
+ 
+-def Apply_TPPLinear_weight_prepack(m, dtype, device='cpu'):
+-    if m.bias is not None and m.weight.size()[0] == 50400:
++
++def Apply_TPPLinear_weight_prepack(m, dtype, device="cpu"):
++    if (m.weight.size()[0] == 50400 or m.weight.size()[0] == 32000) and m.weight.size()[
++        1
++    ] % 64 == 0:
+         m = TPPLinear_weight_prepack(m, 100, 64, dtype)
+-    else:
++    elif m.weight.size()[0] % 16 == 0 and m.weight.size()[1] % 64 == 0:
+         m = TPPLinear_weight_prepack(m, 16, 64, dtype)
++    else:
++        setattr(m, "tpp_fallback", True)
++        return
++    setattr(m, "tpp_fallback", False)
+ 
+     block(m)
+ 
++
+ def block(model):
+     for m in model.modules():
+         if hasattr(m, "maybe_block_params"):
+             m.maybe_block_params()
+ 
++
+ def may_import_deepspeed_modules():
+     try:
+         # import deepspeed in a global space will raise circular import error
+@@ -71,11 +85,12 @@ def may_import_deepspeed_modules():
+ installed_pkg = {pkg.key for pkg in pkg_resources.working_set}
+ if "deepspeed" in installed_pkg:
+     from deepspeed import comm
+-    DS_SHM_ALLREDUCE = os.getenv('DS_SHM_ALLREDUCE')
++
++    DS_SHM_ALLREDUCE = os.getenv("DS_SHM_ALLREDUCE")
+ 
+     def _all_reduce(self, reduceOp, tag, ranks, group_size):
+         if DS_SHM_ALLREDUCE == "1":
+-            comm.all_reduce_low_latency(self, async_op=False)
++            comm.inference_all_reduce(self, async_op=False)
+         else:
+             comm.all_reduce(self, async_op=False)
+         return self
+@@ -99,8 +114,8 @@ def _all_reduce_and_bias_add(mp_group, original_bias, output):
+         )
+ 
+     if original_bias is not None:
+-        output += original_bias    
+-    
++        output += original_bias
++
+     return output
+ 
+ 
+@@ -213,6 +228,7 @@ class _IPEXConv3d(_IPEXConvNd):
+ class _IPEXLinear(_IPEXPrepackModule):
+     def __init__(self):
+         super(_IPEXLinear, self).__init__()
++
+     def maybe_block_params(self):
+         self.weight.block()
+         if self.bias is not None:
+@@ -231,10 +247,16 @@ class _IPEXLinear(_IPEXPrepackModule):
+                 self.out_features,
+             )
+         elif self.use_tpp:
+-            if self.bias is not None:
+-                output = torch.ops.torch_ipex.fc_plain_gemm(x, self.weight, self.bias)
++            if self.tpp_fallback:
++                output = torch.nn.functional.linear(x, self.weight, self.bias)
+             else:
+-                output = torch.ops.torch_ipex.qkv_gemm(x, self.weight)
++                x = x.to(self.weight.dtype).contiguous()
++                if self.bias is not None:
++                    output = torch.ops.torch_ipex.tpp_linear_bias(
++                        x, self.weight, self.bias
++                    )
++                else:
++                    output = torch.ops.torch_ipex.tpp_linear(x, self.weight)
+         else:
+             output = torch.ops.torch_ipex.ipex_MKLSGEMM(
+                 x,
+@@ -436,8 +458,19 @@ def weight_prepack_with_ipex(model, optimizer, params_attr, device_type="cpu"):
+             all_reduce_bias = m.bias
+             if isinstance(new_m, _IPEXLinearAllreduce):
+                 m.bias = None
+-            param_wrapper.prepack(m, is_training)
++            if _using_tpp():
++                weight_key = m.weight
++                param_wrapper.prepack(m, is_training)
++                if m.tpp_fallback:
++                    setattr(new_m, "tpp_fallback", True)
++                params_attr[m.weight] = params_attr.pop(weight_key)
++                del weight_key
++
++            else:
++                param_wrapper.prepack(m, is_training)
++
+             new_m.__dict__ = m.__dict__
++
+             if isinstance(new_m, _IPEXLinearAllreduce):
+                 new_m.original_bias = all_reduce_bias
+             new_m.ctx = param_wrapper.op_ctx
+diff --git a/tests/cpu/iakv_test.py b/tests/cpu/iakv_test.py
+new file mode 100644
+index 00000000..ce25d421
+--- /dev/null
++++ b/tests/cpu/iakv_test.py
+@@ -0,0 +1,88 @@
++import torch
++import torch.nn as nn
++import intel_extension_for_pytorch as ipex
++from common_utils import TestCase
++import unittest
++from typing import Optional, Tuple, Union
++from torch.nn import functional as F
++import time 
++
++class MaskedMHA(torch.nn.Module):
++    def __init__(self, hidden_size=4096, n_head=16, n_head_kv=16, head_dim = 256):
++        super().__init__()
++        self.num_heads = n_head
++        self.num_kv = n_head_kv
++        self.head_dim = head_dim
++        self.query_key_value = nn.Linear(hidden_size, (n_head_kv * 2 + n_head) * head_dim)
++        
++    def _split_heads(self, fused_qkv: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
++        """
++        Split the last dimension into (num_heads, head_dim), results share same memory
++        storage as `fused_qkv`
++
++        Args:
++            fused_qkv (`torch.tensor`, *required*): [batch_size, seq_length, (num_heads + kv_num * 2) * head_dim]
++
++        Returns:
++            query: [batch_size, seq_length, num_heads, head_dim]
++            key: [batch_size, seq_length, kv_num, head_dim]
++            value: [batch_size, seq_length, kv_num, head_dim]
++        """
++        bs = fused_qkv.shape[0]
++        query_layer = fused_qkv[:, :, : self.num_heads * self.head_dim]
++        query_layer = query_layer.view(bs, -1, self.num_heads, self.head_dim)
++        key_layer = fused_qkv[:, :, self.num_heads * self.head_dim : (self.num_heads + self.num_kv) * self.head_dim]
++        key_layer = key_layer.view(bs, -1, self.num_kv, self.head_dim)
++        value_layer = fused_qkv[:, :, (self.num_heads + self.num_kv) * self.head_dim :]
++        value_layer = value_layer.view(bs, -1, self.num_kv, self.head_dim)
++        return query_layer, key_layer, value_layer
++    
++    def _repeat_kv(self, x: torch.Tensor, n_rep: int) -> torch.Tensor:
++        "torch.repeat_interleave(x, dim=2, repeats=n_rep)"
++        bs, slen, n_kv_heads, head_dim = x.shape
++        if n_rep == 1:
++            return x
++        return(
++            x[:,:,:,None,:]
++            .expand(bs, slen, n_kv_heads, n_rep, head_dim)
++            .reshape(bs, slen, n_kv_heads * n_rep, head_dim)
++        )    
++        
++    def forward(self, input_t, key_cache, value_cache, max_position, attention_mask, beam_idx, indirect_access_kv_cache=True, offset=0):
++        head_size= self.head_dim
++        #self.query_key_value(input_t)
++        #linear_res=  torch.randn(input_t.shape[0], input_t.shape[1], (self.num_heads + self.num_kv * 2) * head_size, dtype=torch.bfloat16)
++        query = torch.randn(input_t.shape[0], input_t.shape[1], self.num_heads, self.head_dim, dtype=torch.bfloat16)
++        key = query.clone()
++        value = key.clone()
++        return torch.ops.torch_ipex.masked_multihead_self_attention(query, key, value, key_cache, value_cache, beam_idx, offset, head_size**0.5, max_position, None, attention_mask)
++
++mha = MaskedMHA()
++max_seq_len=2048
++head_num=16
++beam_size=4
++head_size=256
++batch_size=1
++input_t = torch.randn(batch_size*beam_size, 1, head_num * head_size, dtype=torch.bfloat16)
++key_cache_iakv = torch.randn(max_seq_len, beam_size*batch_size, head_num, head_size, dtype=torch.bfloat16) 
++value_cache_iakv = torch.randn(max_seq_len, beam_size*batch_size, head_num, head_size, dtype=torch.bfloat16)
++beam_idx = torch.zeros(max_seq_len, beam_size*batch_size, dtype=torch.int64)   
++offset = 2016 
++attention_mask = torch.zeros(batch_size*beam_size, 1, 1, offset+1, dtype=torch.bfloat16)  
++count =10000
++total_time = 0
++for i in range(count):
++    start =time.time()
++    with torch.inference_mode(), torch.no_grad(), torch.autocast(
++                            device_type="cpu",
++                            enabled=True,
++                            dtype=torch.bfloat16,
++                        ):
++        indirect_access_kv_cache_output, _, key_cache_iakv, value_cache_iakv, beam_idx = mha(input_t, key_cache_iakv, value_cache_iakv, max_seq_len, attention_mask, beam_idx, True, torch.tensor(offset))
++    end = time.time()
++    if i>=5:
++        total_time += end-start
++print("iakv time: ", total_time/(count-5))
++        
++        
++    
+\ No newline at end of file
+diff --git a/tests/cpu/test_deepspeed.py b/tests/cpu/test_deepspeed.py
+index 03b7b033..5bdb6fea 100644
+--- a/tests/cpu/test_deepspeed.py
++++ b/tests/cpu/test_deepspeed.py
+@@ -5,7 +5,7 @@ import unittest
+ 
+ import torch
+ import torch.nn as nn
+-from torch.testing._internal.common_utils import TestCase
++from torch.testing._internal.jit_utils import JitTestCase
+ from torch.testing import FileCheck
+ import intel_extension_for_pytorch as ipex
+ from intel_extension_for_pytorch.nn.utils._weight_prepack import (
+@@ -70,7 +70,69 @@ class DeepSpeedTestM(nn.Module):
+         return z
+ 
+ 
+-class DeepspeedTester(TestCase):
++class GPTJAttention(nn.Module):
++    def __init__(self):
++        super().__init__()
++        self.q_proj = nn.Linear(4096, 4096, bias=False)
++        self.out_proj = nn.Linear(4096, 4096, bias=False)
++
++    def forward(self, x):
++        x = self.q_proj(x)
++        z = self.out_proj(x)
++        return z
++
++class GPTJMLP(nn.Module):
++    def __init__(self, krnl="tpp"):
++        super().__init__()
++        self.krnl = krnl
++        self.fc_in = nn.Linear(4096, 16384, bias=True)
++        self.fc_out = nn.Linear(16384, 4096, bias=True)
++        self.dropout = nn.Dropout()
++
++    def forward(self, x):
++        if self.krnl is "onednn":
++            x = self.fc_in(x)
++            x = nn.functional.gelu(x, approximate='tanh')
++        else:
++            x = torch.ops.torch_ipex.tpp_linear_gelu(x, self.fc_in.weight, self.fc_in.bias)
++        x = self.fc_out(x)
++        x = self.dropout(x)
++        return x
++
++class GPTJBlock(nn.Module):
++    def __init__(self, krnl):
++        super().__init__()
++        self.ln = nn.LayerNorm(4096, eps=1e-05)
++        self.attn = GPTJAttention()
++        self.mlp = GPTJMLP(krnl)
++
++    def forward(self, x):
++        x = self.ln(x)
++        y = self.attn(x)
++        z = self.mlp(x)
++        x = y + z + x
++        return x
++
++class GPTJModel(nn.Module):
++    def __init__(self, krnl):
++        super().__init__()
++        self.linears = nn.ModuleList([GPTJBlock(krnl)])
++
++    def forward(self, x):
++        for l in self.linears:
++            x = l(x)
++        return x
++
++class GPTJTestM(nn.Module):
++    def __init__(self, krnl):
++        super().__init__()
++        self.linear = GPTJModel(krnl)
++
++    def forward(self, x):
++        z = self.linear(x)
++        return z
++
++class DeepspeedTester(JitTestCase):
+     def _get_ds_model(self, m_linear):
+         import deepspeed
+ 
+@@ -181,6 +243,29 @@ class DeepspeedTester(TestCase):
+             ["torch_ipex::ipex_woq_linear", "deepspeed_comm::all_reduce"],
+         )
+ 
++    def test_simplify_allreduce_for_gptj(self):
++        deepspeed_modules = may_import_deepspeed_modules()
++        if deepspeed_modules is not None:
++            ds_pattern = "deepspeed_comm::all_reduce"
++            x=torch.rand(4, 32, 4096)
++            for krnl in ["onednn", "tpp"]:
++                m = GPTJTestM(krnl).eval()
++                ds_model = self._get_ds_model(m)
++                if krnl is "tpp":
++                    ipex.tpp.Apply_TPP_optimization(ds_model, dtype=torch.bfloat16, distributed=True)
++                optimized = ipex.optimize(ds_model.eval(), inplace=True, auto_kernel_selection=True if krnl is "onednn" else False)
++                with torch.no_grad():
++                    y = optimized(x)
++                    jit_optimized = torch.jit.trace(optimized, x, strict=False, check_trace=False)
++                    jit_optimized = torch.jit.freeze(jit_optimized)
++                    graph = jit_optimized.graph_for(x)
++                    self.assertGraphContainsExactly(graph, ds_pattern, 2)
++                    jit_optimized(x)
++                    graph = jit_optimized.graph_for(x)
++                    self.assertGraphContainsExactly(graph, ds_pattern, 1)
++                    jit_res = jit_optimized(x)
++                    self.assertEqual(y, jit_res)
++
+ 
+ if __name__ == "__main__":
+     deepspeed_modules = may_import_deepspeed_modules()
+diff --git a/tests/cpu/test_masked_mha.py b/tests/cpu/test_masked_mha.py
+index 579fa660..aa3ddc57 100644
+--- a/tests/cpu/test_masked_mha.py
++++ b/tests/cpu/test_masked_mha.py
+@@ -4,7 +4,6 @@ import intel_extension_for_pytorch as ipex
+ from common_utils import TestCase
+ import unittest
+ from typing import Optional, Tuple, Union
+-from torch.nn import functional as F
+ 
+ class MaskedMHA(torch.nn.Module):
+     def __init__(self, hidden_size=4096, n_head=16, n_head_kv=16, head_dim = 256):
+@@ -85,113 +84,129 @@ class MaskedMHA(torch.nn.Module):
+ class MaskedMHATest(TestCase):
+     def test_mha(self):
+         beam_size_list = [1, 4]
+-        batch_size = 1 
++        batch_size_list = [1, 2, 4]
+         head_size = 256
+         head_num = 16
+-        head_num_kv_list = [1, 4, 8, 16]
++        head_num_kv_list = [1, 4, 16]
+         max_seq_len = 64
+-        first_seq_len = 2             
+-        for beam_size in beam_size_list:
+-            for head_num_kv in head_num_kv_list:
+-                key_cache = None
+-                value_cache = None
+-                offset = 0  
+-                mha = MaskedMHA(n_head=head_num, n_head_kv=head_num_kv, head_dim = head_size)
+-                #first token decode
+-                input_t = torch.randn(batch_size, first_seq_len, head_num * head_size, dtype=torch.float32)
+-                key_cache_iakv = torch.randn(max_seq_len, beam_size*batch_size, head_num, head_size, dtype=torch.float32) 
+-                value_cache_iakv = torch.randn(max_seq_len, beam_size*batch_size, head_num, head_size, dtype=torch.float32)
+-                beam_idx = torch.zeros(max_seq_len, beam_size*batch_size, dtype=torch.int64)        
+-                #create attention mask and causal mask
+-                attention_mask = torch.zeros(batch_size, 1, first_seq_len, first_seq_len, dtype=torch.float32)
+-                casual_mask = torch.full((first_seq_len, first_seq_len), -1e6, dtype=input_t.dtype)
+-                casual_mask = casual_mask.triu(1)    
+-                casual_mask = casual_mask.unsqueeze(0).unsqueeze(0)
+-                attention_mask = attention_mask + casual_mask #combine the attention mask and causal mask
+-                #UT for first token with fp32        
+-                naive_output, _, key_cache, value_cache, _ = mha(input_t, None, None, max_seq_len, attention_mask, None, None)
+-                indirect_access_kv_cache_output, _, key_cache_iakv, value_cache_iakv, beam_idx = mha(input_t, key_cache_iakv, value_cache_iakv, max_seq_len, attention_mask, beam_idx, True, torch.tensor(offset))      
+-                print("head_num:", head_num, "head_num_kv: ", head_num_kv)
+-                self.assertEqual(naive_output, indirect_access_kv_cache_output)     
+-                key_cache = key_cache.repeat_interleave(beam_size, dim=0)
+-                value_cache = value_cache.repeat_interleave(beam_size, dim=0)    
+-                self.assertEqual(key_cache.transpose(0,1), key_cache_iakv[0:first_seq_len,:,:,:])
+-                self.assertEqual(value_cache.transpose(0,1), value_cache_iakv[0:first_seq_len,:,:,:])         
+-                beam_idx_t = torch.zeros(beam_size*batch_size, dtype=torch.int64)
+-                beam_idx[offset] = beam_idx_t
+-                #reorder cache for naive impelementation
+-                key_cache = torch.index_select(key_cache, 0, beam_idx_t)
+-                value_cache = torch.index_select(value_cache, 0, beam_idx_t)
+-                    
+-                # #UT for first token with bf16
+-                input_t_bf16 = input_t.bfloat16()
+-                key_cache_iakv_bf16 = key_cache_iakv.bfloat16()
+-                value_cache_iakv_bf16 = value_cache_iakv.bfloat16()
+-                attention_mask_bf16 = attention_mask.bfloat16()
+-                with torch.inference_mode(), torch.no_grad(), torch.autocast(
+-                    device_type="cpu",
+-                    enabled=True,
+-                    dtype=torch.bfloat16,
+-                ):
+-                    naive_output_bf16, _, key_cache_bf16, value_cache_bf16, _ = mha(input_t_bf16, None, None, max_seq_len, attention_mask_bf16, None, None)
+-                    indirect_access_kv_cache_output_bf16, _, key_cache_iakv_bf16, value_cache_iakv_bf16, beam_idx = mha(input_t_bf16, key_cache_iakv_bf16, value_cache_iakv_bf16, max_seq_len, attention_mask_bf16, beam_idx, True, torch.tensor(offset))
+-                    self.assertEqual(naive_output_bf16, indirect_access_kv_cache_output_bf16)      
+-                    key_cache_bf16 = torch.index_select(key_cache_bf16, 0, beam_idx_t)
+-                    value_cache_bf16 = torch.index_select(value_cache_bf16, 0, beam_idx_t)
+-                offset = offset + first_seq_len
+-                #UT for next token with fp32
+-                input_t = torch.randn(beam_size * batch_size, 1, head_num * head_size, dtype=torch.float32)
+-                attention_mask = torch.zeros(beam_size*batch_size, 1, 1, offset+1, dtype=torch.float32)
+-                naive_output, _, key_cache, value_cache, _ = mha(input_t, key_cache, value_cache, max_seq_len, attention_mask, None, None)
+-                indirect_access_kv_cache_output, _, key_cache_iakv, value_cache_iakv, beam_idx = mha(input_t, key_cache_iakv, value_cache_iakv, max_seq_len, attention_mask, beam_idx, True, torch.tensor(offset))      
+-                self.assertEqual(naive_output, indirect_access_kv_cache_output)
+-                self.assertEqual(key_cache.transpose(0,1)[offset], key_cache_iakv[offset,:,:,:])
+-                self.assertEqual(value_cache.transpose(0,1)[offset], value_cache_iakv[offset,:,:,:])    
+-                # #UT for next token with bf16
+-                input_t_bf16 = input_t.bfloat16()
+-                attention_mask_bf16 = attention_mask.bfloat16()
+-                with torch.inference_mode(), torch.no_grad(), torch.autocast(
+-                    device_type="cpu",
+-                    enabled=True,
+-                    dtype=torch.bfloat16,
+-                ):
+-                    naive_output_bf16, _, key_cache_bf16, value_cache_bf16, _ = mha(input_t_bf16, key_cache_bf16, value_cache_bf16, max_seq_len, attention_mask_bf16, None, None)
+-                    indirect_access_kv_cache_output_bf16, _, key_cache_iakv_bf16, value_cache_iakv_bf16, beam_idx = mha(input_t_bf16, key_cache_iakv_bf16, value_cache_iakv_bf16, max_seq_len, attention_mask_bf16, beam_idx, True, torch.tensor(offset))
+-                    self.assertEqual(naive_output_bf16, indirect_access_kv_cache_output_bf16, prec=0.05)
+-                    self.assertEqual(key_cache_bf16.transpose(0,1)[offset], key_cache_iakv_bf16[offset,:,:,:])
+-                    self.assertEqual(value_cache_bf16.transpose(0,1)[offset], value_cache_iakv_bf16[offset,:,:,:])       
++        first_seq_len = 32
++        for batch_size in batch_size_list:          
++            for beam_size in beam_size_list:
++                for head_num_kv in head_num_kv_list:
++                    key_cache = None
++                    value_cache = None
++                    offset = 0  
++                    mha = MaskedMHA(n_head=head_num, n_head_kv=head_num_kv, head_dim = head_size)
++                    #first token decode
++                    input_t = torch.randn(batch_size, first_seq_len, head_num * head_size, dtype=torch.float32)
++                    key_cache_iakv = torch.randn(max_seq_len, beam_size*batch_size, head_num, head_size, dtype=torch.float32) 
++                    value_cache_iakv = torch.randn(max_seq_len, beam_size*batch_size, head_num, head_size, dtype=torch.float32)
++                    beam_idx = torch.zeros(max_seq_len, beam_size*batch_size, dtype=torch.int64)        
++                    #create attention mask and causal mask
++                    attention_mask = torch.zeros(batch_size, 1, first_seq_len, first_seq_len, dtype=torch.float32)
++                    casual_mask = torch.full((first_seq_len, first_seq_len), -1e6, dtype=input_t.dtype)
++                    casual_mask = casual_mask.triu(1)    
++                    casual_mask = casual_mask.unsqueeze(0).unsqueeze(0)
++                    attention_mask = attention_mask + casual_mask #combine the attention mask and causal mask                    
++                    #UT for first token with fp32        
++                    naive_output, _, key_cache, value_cache, _ = mha(input_t, None, None, max_seq_len, attention_mask, None, None)
++                    indirect_access_kv_cache_output, _, key_cache_iakv, value_cache_iakv, beam_idx = mha(input_t, key_cache_iakv, value_cache_iakv, max_seq_len, attention_mask, beam_idx, True, torch.tensor(offset))      
++                    #import pdb ; pdb.set_trace()
++                    print("batch_size:", batch_size, "head_num:", head_num, "head_num_kv: ", head_num_kv)
++                    #self.assertEqual(naive_output, indirect_access_kv_cache_output)     
++                    key_cache = key_cache.repeat_interleave(beam_size, dim=0)
++                    value_cache = value_cache.repeat_interleave(beam_size, dim=0) 
++                    for i in range(batch_size):
++                        self.assertEqual(key_cache.transpose(0,1)[:,i*beam_size, :, :], key_cache_iakv[0:first_seq_len, i*beam_size,:,:])
++                        self.assertEqual(value_cache.transpose(0,1)[:,i*beam_size, :, :], value_cache_iakv[0:first_seq_len, i*beam_size,:,:])                             
+                     if beam_size == 4:    
+-                        beam_idx_t = torch.tensor([1,3,0,0]).repeat(batch_size)
++                        beam_idx_t = torch.zeros(beam_size*batch_size, dtype=torch.int64)
++                        for i in range(1, batch_size):
++                            beam_idx_t[i*beam_size:i*beam_size+beam_size] = beam_idx_t[i*beam_size:i*beam_size+beam_size] + i*beam_size                              
+                     elif beam_size == 1:
+-                        beam_idx_t = torch.tensor([0]).repeat(batch_size)
++                        beam_idx_t = torch.arange(batch_size)
+                     beam_idx[offset] = beam_idx_t
+-                    offset = offset + 1
+                     #reorder cache for naive impelementation
+                     key_cache = torch.index_select(key_cache, 0, beam_idx_t)
+-                    value_cache = torch.index_select(value_cache, 0, beam_idx_t)     
+-                    key_cache_bf16 = torch.index_select(key_cache_bf16, 0, beam_idx_t)
+-                    value_cache_bf16 = torch.index_select(value_cache_bf16, 0, beam_idx_t)     
+-                #UT for next token with fp32
+-                input_t = torch.randn(beam_size * batch_size, 1, head_num * head_size, dtype=torch.float32)
+-                attention_mask = torch.zeros(beam_size*batch_size, 1, 1, offset+1, dtype=torch.float32)
+-                naive_output, _, key_cache, value_cache, _ = mha(input_t, key_cache, value_cache, max_seq_len, attention_mask, None, None)
+-                indirect_access_kv_cache_output, _, key_cache_iakv, value_cache_iakv, beam_idx = mha(input_t, key_cache_iakv, value_cache_iakv, max_seq_len, attention_mask, beam_idx, True, torch.tensor(offset))      
+-                self.assertEqual(naive_output, indirect_access_kv_cache_output)
+-                self.assertEqual(key_cache.transpose(0,1)[offset], key_cache_iakv[offset,:,:,:])
+-                self.assertEqual(value_cache.transpose(0,1)[offset], value_cache_iakv[offset,:,:,:])    
+-                # #UT for next token with bf16
+-                input_t_bf16 = input_t.bfloat16()
+-                attention_mask_bf16 = attention_mask.bfloat16()
+-                with torch.inference_mode(), torch.no_grad(), torch.autocast(
+-                    device_type="cpu",
+-                    enabled=True,
+-                    dtype=torch.bfloat16,
+-                ):
+-                    naive_output_bf16, _, key_cache_bf16, value_cache_bf16, _ = mha(input_t_bf16, key_cache_bf16, value_cache_bf16, max_seq_len, attention_mask_bf16, None, None)
+-                    indirect_access_kv_cache_output_bf16, _, key_cache_iakv_bf16, value_cache_iakv_bf16, beam_idx = mha(input_t_bf16, key_cache_iakv_bf16, value_cache_iakv_bf16, max_seq_len, attention_mask_bf16, beam_idx, True, torch.tensor(offset))
+-                    self.assertEqual(naive_output_bf16, indirect_access_kv_cache_output_bf16, prec=0.05)
+-                    self.assertEqual(key_cache_bf16.transpose(0,1)[offset], key_cache_iakv_bf16[offset,:,:,:])
+-                    self.assertEqual(value_cache_bf16.transpose(0,1)[offset], value_cache_iakv_bf16[offset,:,:,:])    
++                    value_cache = torch.index_select(value_cache, 0, beam_idx_t)
++                        
++                    # # #UT for first token with bf16
++                    input_t_bf16 = input_t.bfloat16()
++                    key_cache_iakv_bf16 = key_cache_iakv.bfloat16()
++                    value_cache_iakv_bf16 = value_cache_iakv.bfloat16()
++                    attention_mask_bf16 = attention_mask.bfloat16()
++                    with torch.inference_mode(), torch.no_grad(), torch.autocast(
++                        device_type="cpu",
++                        enabled=True,
++                        dtype=torch.bfloat16,
++                    ):
++                        naive_output_bf16, _, key_cache_bf16, value_cache_bf16, _ = mha(input_t_bf16, None, None, max_seq_len, attention_mask_bf16, None, None)
++                        indirect_access_kv_cache_output_bf16, _, key_cache_iakv_bf16, value_cache_iakv_bf16, beam_idx = mha(input_t_bf16, key_cache_iakv_bf16, value_cache_iakv_bf16, max_seq_len, attention_mask_bf16, beam_idx, True, torch.tensor(offset))
++                        self.assertEqual(naive_output_bf16, indirect_access_kv_cache_output_bf16, prec=2e-2)
++                        key_cache_bf16 = key_cache_bf16.repeat_interleave(beam_size, dim=0)
++                        value_cache_bf16 = value_cache_bf16.repeat_interleave(beam_size, dim=0) 
++                        for i in range(batch_size):
++                            self.assertEqual(key_cache_bf16.transpose(0,1)[:,i*beam_size, :, :], key_cache_iakv_bf16[0:first_seq_len, i*beam_size,:,:])
++                            self.assertEqual(value_cache_bf16.transpose(0,1)[:,i*beam_size, :, :], value_cache_iakv_bf16[0:first_seq_len, i*beam_size,:,:])      
++                        key_cache_bf16 = torch.index_select(key_cache_bf16, 0, beam_idx_t)
++                        value_cache_bf16 = torch.index_select(value_cache_bf16, 0, beam_idx_t)
++                                
++                    offset = offset + first_seq_len
++                    #UT for next token with fp32
++                    input_t = torch.randn(beam_size * batch_size, 1, head_num * head_size, dtype=torch.float32)
++                    attention_mask = torch.zeros(beam_size*batch_size, 1, 1, offset+1, dtype=torch.float32)
++                    naive_output, _, key_cache, value_cache, _ = mha(input_t, key_cache, value_cache, max_seq_len, attention_mask, None, None)
++                    indirect_access_kv_cache_output, _, key_cache_iakv, value_cache_iakv, beam_idx = mha(input_t, key_cache_iakv, value_cache_iakv, max_seq_len, attention_mask, beam_idx, True, torch.tensor(offset))      
++                    self.assertEqual(naive_output, indirect_access_kv_cache_output)
++                    self.assertEqual(key_cache.transpose(0,1)[offset], key_cache_iakv[offset,:,:,:])
++                    self.assertEqual(value_cache.transpose(0,1)[offset], value_cache_iakv[offset,:,:,:])    
++                    # #UT for next token with bf16
++                    input_t_bf16 = input_t.bfloat16()
++                    attention_mask_bf16 = attention_mask.bfloat16()
++                    with torch.inference_mode(), torch.no_grad(), torch.autocast(
++                        device_type="cpu",
++                        enabled=True,
++                        dtype=torch.bfloat16,
++                    ):
++                        naive_output_bf16, _, key_cache_bf16, value_cache_bf16, _ = mha(input_t_bf16, key_cache_bf16, value_cache_bf16, max_seq_len, attention_mask_bf16, None, None)
++                        indirect_access_kv_cache_output_bf16, _, key_cache_iakv_bf16, value_cache_iakv_bf16, beam_idx = mha(input_t_bf16, key_cache_iakv_bf16, value_cache_iakv_bf16, max_seq_len, attention_mask_bf16, beam_idx, True, torch.tensor(offset))
++                        self.assertEqual(naive_output_bf16, indirect_access_kv_cache_output_bf16, prec=0.05)
++                        self.assertEqual(key_cache_bf16.transpose(0,1)[offset], key_cache_iakv_bf16[offset,:,:,:])
++                        self.assertEqual(value_cache_bf16.transpose(0,1)[offset], value_cache_iakv_bf16[offset,:,:,:])       
++                        if beam_size == 4:    
++                            beam_idx_t = torch.tensor([1,3,0,0]).repeat(batch_size)
++                            for i in range(1, batch_size):
++                                beam_idx_t[i*beam_size:i*beam_size+beam_size] = beam_idx_t[i*beam_size:i*beam_size+beam_size] + i*beam_size                           
++                        elif beam_size == 1:
++                            beam_idx_t = torch.arange(batch_size)
++                        beam_idx[offset] = beam_idx_t
++                        offset = offset + 1
++                        #reorder cache for naive impelementation
++                        key_cache = torch.index_select(key_cache, 0, beam_idx_t)
++                        value_cache = torch.index_select(value_cache, 0, beam_idx_t)     
++                        key_cache_bf16 = torch.index_select(key_cache_bf16, 0, beam_idx_t)
++                        value_cache_bf16 = torch.index_select(value_cache_bf16, 0, beam_idx_t)     
++                    #UT for next token with fp32
++                    input_t = torch.randn(beam_size * batch_size, 1, head_num * head_size, dtype=torch.float32)
++                    attention_mask = torch.zeros(beam_size*batch_size, 1, 1, offset+1, dtype=torch.float32)
++                    naive_output, _, key_cache, value_cache, _ = mha(input_t, key_cache, value_cache, max_seq_len, attention_mask, None, None)
++                    indirect_access_kv_cache_output, _, key_cache_iakv, value_cache_iakv, beam_idx = mha(input_t, key_cache_iakv, value_cache_iakv, max_seq_len, attention_mask, beam_idx, True, torch.tensor(offset))      
++                    self.assertEqual(naive_output, indirect_access_kv_cache_output)
++                    self.assertEqual(key_cache.transpose(0,1)[offset], key_cache_iakv[offset,:,:,:])
++                    self.assertEqual(value_cache.transpose(0,1)[offset], value_cache_iakv[offset,:,:,:])    
++                    # #UT for next token with bf16
++                    input_t_bf16 = input_t.bfloat16()
++                    attention_mask_bf16 = attention_mask.bfloat16()
++                    with torch.inference_mode(), torch.no_grad(), torch.autocast(
++                        device_type="cpu",
++                        enabled=True,
++                        dtype=torch.bfloat16,
++                    ):
++                        naive_output_bf16, _, key_cache_bf16, value_cache_bf16, _ = mha(input_t_bf16, key_cache_bf16, value_cache_bf16, max_seq_len, attention_mask_bf16, None, None)
++                        indirect_access_kv_cache_output_bf16, _, key_cache_iakv_bf16, value_cache_iakv_bf16, beam_idx = mha(input_t_bf16, key_cache_iakv_bf16, value_cache_iakv_bf16, max_seq_len, attention_mask_bf16, beam_idx, True, torch.tensor(offset))
++                        self.assertEqual(naive_output_bf16, indirect_access_kv_cache_output_bf16, prec=0.05)
++                        self.assertEqual(key_cache_bf16.transpose(0,1)[offset], key_cache_iakv_bf16[offset,:,:,:])
++                        self.assertEqual(value_cache_bf16.transpose(0,1)[offset], value_cache_iakv_bf16[offset,:,:,:])    
+                              
+ if __name__ == "__main__":
+     test = unittest.main()
