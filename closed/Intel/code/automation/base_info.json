@@ -1,0 +1,216 @@
+[
+    {
+        "resnet50": {
+            "path": "src",
+            "Offline": {
+                "performance": "run_offline.sh",
+                "accuracy": "run_offline_accuracy.sh"
+            },
+            "Server": {
+                "performance": "run_server.sh",
+                "accuracy": "run_server_accuracy.sh"
+            }
+        },
+        "retinanet": {
+            "path": "",
+            "Offline": {
+                "performance": "run_offline.sh",
+                "accuracy": "run_offline_accuracy.sh"
+            },
+            "Server": {
+                "performance": "run_server.sh",
+                "accuracy": "run_server_accuracy.sh"
+            }
+        },
+        "rnnt": {
+            "path": "configs",
+            "Offline": {
+                "performance": "./launch_sut.sh",
+                "accuracy": "./launch_sut.sh"
+            },
+            "Server": {
+                "performance": "./launch_sut.sh",
+                "accuracy": "./launch_sut.sh"
+            }
+        },
+        "3d-unet-99.9": {
+            "path": "",
+            "Offline": {
+                "performance": "run.sh",
+                "accuracy": "run.sh"
+            },
+            "Server": {
+                "performance": "",
+                "accuracy": ""
+            }
+        },
+        "bert-99": {
+            "path": "",
+            "Offline": {
+                "performance": "run.sh",
+                "accuracy": "run.sh"
+            },
+            "Server": {
+                "performance": "run_server.sh",
+                "accuracy": "run_server.sh"
+            }
+        },
+        "dlrm-99.9": {
+            "path": "",
+            "Offline": {
+                "performance": "runcppsut",
+                "accuracy": "runcppsut"
+            },
+            "Server": {
+                "performance": "runcppsut",
+                "accuracy": "runcppsut"
+            }
+        },
+        "gptj-99": {
+            "path": "",
+            "Offline": {
+                "performance": "run_offline.sh",
+                "accuracy": "run_offline_accuracy.sh"
+            },
+            "Server": {
+                "performance": "run_server.sh",
+                "accuracy": "run_server_accuracy.sh"
+            }
+        },
+        "gptj-99-int4": {
+            "path": "",
+            "Offline": {
+                "performance": "run_offline_int4.sh",
+                "accuracy": "run_offline_accuracy_int4.sh"
+            },
+            "Server": {
+                "performance": "run_server_int4.sh",
+                "accuracy": "run_server_accuracy_int4.sh"
+            }
+        },
+        "dlrm-v2-99": {
+            "path": "",
+            "Offline": {
+                "performance": "run_main.sh",
+                "accuracy": "run_main.sh"
+            },
+            "Server": {
+                "performance": "run_main.sh",
+                "accuracy": "run_main.sh"
+            }
+        },
+        "dlrm2-99.9-bf16": {
+            "path": "",
+            "Offline": {
+                "performance": "run_main.sh",
+                "accuracy": "run_main.sh"
+            },
+            "Server": {
+                "performance": "run_main.sh",
+                "accuracy": "run_main.sh"
+            }
+        }
+    },
+    {
+        "resnet50": {
+            "Offline": {
+                "performance": "256",
+                "accuracy": "256"
+            },
+            "Server": {
+                "performance": "",
+                "accuracy": ""
+            }
+        },
+        "retinanet": {
+            "Offline": {
+                "performance": "",
+                "accuracy": ""
+            },
+            "Server": {
+                "performance": "",
+                "accuracy": ""
+            }
+        },
+        "rnnt": {
+            "Offline": {
+                "performance": "SCENARIO=Offline BS=256 INTER=28 INTRA=4 LEN=2 WARMUP=3 ",
+                "accuracy": "SCENARIO=Offline BS=256 INTER=28 INTRA=4 ACCURACY=true LEN=2 "
+            },
+            "Server": {
+                "performance": "SCENARIO=Server PRO_BS=4 PRO_INTER=16 PRO_INTRA=1 BS=128 INTER=12 INTRA=8 LEN=8 RESPONSE=9 QOS=233500 WARMUP=3 NUMA=2",
+                "accuracy": "SCENARIO=Server PRO_BS=4 PRO_INTER=16 PRO_INTRA=1 BS=128 INTER=12 INTRA=8 LEN=8 RESPONSE=9 QOS=233500 ACCURACY=true NUMA=2"
+            }
+        },
+        "3d-unet-99.9": {
+            "Offline": {
+                "performance": "perf",
+                "accuracy": "acc"
+            },
+            "Server": {
+                "performance": "",
+                "accuracy": ""
+            }
+        },
+        "bert-99": {
+            "Offline": {
+                "performance": "",
+                "accuracy": "--accuracy"
+            },
+            "Server": {
+                "performance": "",
+                "accuracy": "--accuracy"
+            }
+        },
+        "dlrm-99.9": {
+            "Offline": {
+                "performance": "",
+                "accuracy": "accuracy"
+            },
+            "Server": {
+                "performance": "performance server",
+                "accuracy": "accuracy server"
+            }
+        },
+        "gptj-99": {
+            "Offline": {
+                "performance": "",
+                "accuracy": ""
+            },
+            "Server": {
+                "performance": "",
+                "accuracy": ""
+            }
+        },
+        "gptj-99-int4": {
+            "Offline": {
+                "performance": "",
+                "accuracy": ""
+            },
+            "Server": {
+                "performance": "",
+                "accuracy": ""
+            }
+        },
+        "dlrm-v2-99": {
+            "Offline": {
+                "performance": "offline int8",
+                "accuracy": "offline accuracy int8"
+            },
+            "Server": {
+                "performance": "server int8",
+                "accuracy": "server accuracy int8"
+            }
+        },
+        "dlrm2-99.9-bf16": {
+            "Offline": {
+                "performance": "offline bf16",
+                "accuracy": "offline accuracy bf16"
+            },
+            "Server": {
+                "performance": "server bf16",
+                "accuracy": "server accuracy bf16"
+            }
+        }       
+    }
+]
